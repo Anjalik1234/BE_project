@@ -1,0 +1,202 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodePulse AI | Change Impact Analysis</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: "Segoe UI", Arial, sans-serif;
+            background: #0b1020;
+            color: #e8edf7;
+        }
+        header {
+            padding: 24px 6%;
+            border-bottom: 1px solid #263047;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .brand { font-size: 23px; font-weight: 700; }
+        .brand span { color: #71a7ff; }
+        .status {
+            color: #80e3b0;
+            background: #143328;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+        main { max-width: 1150px; margin: 32px auto; padding: 0 20px 40px; }
+        h1 { font-size: 30px; margin-bottom: 8px; }
+        .subtitle { color: #9ca9c3; margin-bottom: 28px; }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 18px;
+        }
+        .card {
+            background: #131b2e;
+            border: 1px solid #293650;
+            border-radius: 14px;
+            padding: 22px;
+            min-width: 0;
+        }
+        .wide { grid-column: 1 / -1; }
+        h2 { font-size: 17px; margin: 0 0 18px; }
+        .label { color: #9ca9c3; font-size: 12px; margin-bottom: 7px; }
+        .value { overflow-wrap: anywhere; font-size: 15px; }
+        .pill {
+            display: inline-block;
+            background: #283758;
+            color: #a9c9ff;
+            border-radius: 6px;
+            padding: 6px 9px;
+            font-size: 12px;
+        }
+        .conditions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        pre {
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+            background: #090e19;
+            border: 1px solid #293650;
+            padding: 14px;
+            border-radius: 8px;
+            color: #b8d2ff;
+            font-size: 13px;
+        }
+        .change { color: #ffb4a9; }
+        .success { color: #80e3b0; }
+        .muted { color: #9ca9c3; font-size: 13px; }
+        .item {
+            padding: 13px 0;
+            border-bottom: 1px solid #293650;
+        }
+        .item:last-child { border-bottom: 0; }
+        .item strong { display: block; margin-bottom: 5px; }
+        .test {
+            display: grid;
+            grid-template-columns: 60px 1fr;
+            gap: 12px;
+            padding: 13px 0;
+            border-bottom: 1px solid #293650;
+        }
+        .test:last-child { border-bottom: 0; }
+        .amount { font-size: 18px; font-weight: 700; color: #a9c9ff; }
+        footer { color: #8491aa; font-size: 12px; text-align: center; padding: 20px; }
+        @media (max-width: 700px) {
+            .grid, .conditions { grid-template-columns: 1fr; }
+            .wide { grid-column: auto; }
+            header { padding: 18px 5%; }
+            h1 { font-size: 25px; }
+        }
+    </style>
+</head>
+<body>
+<header>
+    <div class="brand">CodePulse <span>AI</span></div>
+    <div class="status">● Analysis Report</div>
+</header>
+
+<main>
+    <h1>Change Impact Analysis</h1>
+    <p class="subtitle">Understand code changes, dependent components and recommended tests.</p>
+
+    <div class="grid">
+        <section class="card">
+            <h2>Change Overview</h2>
+            <div class="label">Changed file</div>
+            <div class="value">{{ report.file }}</div>
+            <br>
+            <div class="label">Method</div>
+            <div class="value">{{ report.method }}()</div>
+            <br>
+            <div class="label">Change category</div>
+            <span class="pill">{{ report.changeType }}</span>
+        </section>
+
+        <section class="card">
+            <h2>Business Rule Change</h2>
+            <div class="conditions">
+                <div>
+                    <div class="label">Before</div>
+                    <pre>{{ report.oldCondition }}</pre>
+                </div>
+                <div>
+                    <div class="label">After</div>
+                    <pre>{{ report.newCondition }}</pre>
+                </div>
+            </div>
+            <p class="muted">A changed condition can alter application behavior even when dependencies remain unchanged.</p>
+        </section>
+
+        <section class="card wide">
+            <h2>Source Change Evidence</h2>
+            <pre>{% for line in report.diff %}{{ line }}
+{% endfor %}</pre>
+        </section>
+
+        <section class="card">
+            <h2>Potentially Affected Methods</h2>
+            {% for line in affected_lines %}
+                <div class="item">
+                    <strong>{{ line }}</strong>
+                    <span class="muted">Identified by Graphify dependency analysis</span>
+                </div>
+            {% else %}
+                <p class="muted">No affected methods were parsed from the report.</p>
+            {% endfor %}
+        </section>
+
+        <section class="card">
+            <h2>Behavioral Impact</h2>
+            {% for change in report.behaviorChangesForSampleAmounts %}
+                <div class="item">
+                    <strong>Amount: {{ change.amount }}</strong>
+                    <span class="muted">
+                        Before: {{ "Accepted" if change.before else "Rejected" }}
+                        → After: {{ "Accepted" if change.after else "Rejected" }}
+                    </span>
+                </div>
+            {% else %}
+                <p class="success">No changed outcomes among the tested sample amounts.</p>
+            {% endfor %}
+            <p class="muted">These are sample comparisons, not exhaustive runtime verification.</p>
+        </section>
+
+        <section class="card wide">
+            <h2>Recommended Test Cases</h2>
+            {% for test in report.recommendedTests %}
+                <div class="test">
+                    <div class="amount">{{ test.amount }}</div>
+                    <div>
+                        <strong>{{ test.purpose }}</strong>
+                        <div class="muted">
+                            Before: {{ "Pass" if test.expectedBefore else "Fail" }}
+                            · After: {{ "Pass" if test.expectedAfter else "Fail" }}
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <p class="muted">No test recommendations available.</p>
+            {% endfor %}
+            <p class="muted">Suggested tests have not necessarily been executed.</p>
+        </section>
+
+        <section class="card wide">
+            <h2>Analysis Limitations</h2>
+            {% for limitation in report.limitations %}
+                <div class="item muted">{{ limitation }}</div>
+            {% endfor %}
+        </section>
+    </div>
+</main>
+
+<footer>CodePulse AI · Prototype · Evidence-backed change impact</footer>
+</body>
+</html>

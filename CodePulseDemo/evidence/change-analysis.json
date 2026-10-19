@@ -1,0 +1,13 @@
+{
+  "file": "src/main/java/com/codepulse/demo/service/PaymentService.java",
+  "method": "processPayment",
+  "oldCondition": "order.getAmount() > 0",
+  "newCondition": "order.getAmount() >= 100",
+  "changeType": "BUSINESS_RULE_CHANGE",
+  "potentialImpact": [
+    "Orders with amount greater than 0 but less than 100 now fail payment validation",
+    "Orders with amount greater than or equal to 100 continue to pass this condition"
+  ],
+  "directCaller": "OrderService.placeOrder",
+  "indirectCaller": "OrderController.createOrder"
+}

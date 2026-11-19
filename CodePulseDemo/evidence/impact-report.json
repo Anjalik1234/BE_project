@@ -34,36 +34,10 @@
       "after": false
     }
   ],
-  "dependencyAnalysis": "Affected nodes for .processPayment()\nRelations: calls, indirect_call, references, imports, imports_from, dynamic_import, re_exports, inherits, extends, implements, uses, mixes_in, embeds, defines, requires\nDepth: 2\n- .placeOrder() [calls] src/main/java/com/codepulse/demo/service/OrderService.java:L24\n- .createOrder() [calls] src/main/java/com/codepulse/demo/controller/OrderController.java:L14",
+  "dependencyAnalysis": "Affected nodes for .processPayment()\nDepth: 2\n- Order [references] src/main/java/com/codepulse/demo/service/PaymentService.java:L6\n- .getAmount() [calls] src/main/java/com/codepulse/demo/service/PaymentService.java:L7\n- .placeOrder() [calls] src/main/java/com/codepulse/demo/service/OrderService.java:L24\n- OrderController.java [imports] src/main/java/com/codepulse/demo/controller/OrderController.java:L3\n- .createOrder() [references] src/main/java/com/codepulse/demo/controller/OrderController.java:L13\n- .hasStock() [calls] src/main/java/com/codepulse/demo/service/OrderService.java:L20\n- .reduceStock() [calls] src/main/java/com/codepulse/demo/service/OrderService.java:L28\n- .sendConfirmation() [calls] src/main/java/com/codepulse/demo/service/OrderService.java:L29",
   "limitations": [
     "Method name is currently configured for this controlled experiment.",
     "Behavioral comparison uses selected sample inputs.",
-    "Dependency results come from Graphify and do not prove runtime effects."
-  ],
-  "recommendedTests": [
-    {
-      "amount": 0,
-      "expectedBefore": false,
-      "expectedAfter": false,
-      "purpose": "Verify zero-value payments remain rejected"
-    },
-    {
-      "amount": 99,
-      "expectedBefore": true,
-      "expectedAfter": false,
-      "purpose": "Verify an amount below the new threshold is rejected"
-    },
-    {
-      "amount": 100,
-      "expectedBefore": true,
-      "expectedAfter": true,
-      "purpose": "Verify the exact threshold is accepted"
-    },
-    {
-      "amount": 101,
-      "expectedBefore": true,
-      "expectedAfter": true,
-      "purpose": "Verify an amount above the threshold is accepted"
-    }
+    "Dependency results do not prove runtime effects."
   ]
 }

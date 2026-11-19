@@ -4,7 +4,6 @@ import subprocess
 import sys
 import difflib
 import re
-import copy
 
 from flask import Flask, render_template, jsonify, request
 
@@ -19,9 +18,7 @@ AFTER_FILE   = (
     PROJECT_DIR / "src" / "main" / "java" / "com"
     / "codepulse" / "demo" / "service" / "PaymentService.java"
 )
-GRAPH_FILE        = PROJECT_DIR / "codepulse-out" / "graph.json"
-CODEPULSE_ENG_DIR = PROJECT_DIR.parent / "codepulse-engine"
-CODEPULSE_ENG_SRC = CODEPULSE_ENG_DIR / "graphify"   # inner Python package
+GRAPH_FILE   = PROJECT_DIR / "codepulse-out" / "graph.json"
 
 # ── condition regex ──────────────────────────────────────────────────────────
 _COND_RE = re.compile(
@@ -116,12 +113,11 @@ def _recommend_tests(old_op, old_val, new_op, new_val):
 # ════════════════════════════════════════════════════════════════════════════
 
 def _load_graph():
-    """Load graph.json into a networkx DiGraph using the CodePulse graph engine."""
+    """Load graph.json into a networkx DiGraph."""
     if not GRAPH_FILE.exists():
         return None
-    sys.path.insert(0, str(CODEPULSE_ENG_DIR))
     try:
-        from graphify.paths import load_node_link_graph  # type: ignore
+        from codepulse_graph.paths import load_node_link_graph
         raw = json.loads(GRAPH_FILE.read_text(encoding="utf-8"))
         return load_node_link_graph(raw)
     except Exception:
@@ -130,12 +126,11 @@ def _load_graph():
 
 def _query_affected(method_name: str, depth: int = 2) -> list[dict]:
     """
-    Return affected hits for a method using the CodePulse graph engine Python API.
-    Falls back to an empty list if the engine cannot be imported.
+    Walk the CodePulse knowledge graph (reverse BFS) to find all methods
+    that depend on the given method up to the specified depth.
     """
-    sys.path.insert(0, str(CODEPULSE_ENG_DIR))
     try:
-        from graphify.affected import affected_nodes, resolve_seed  # type: ignore
+        from codepulse_graph.affected import affected_nodes, resolve_seed
         G = _load_graph()
         if G is None:
             return []

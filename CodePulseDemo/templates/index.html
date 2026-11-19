@@ -116,6 +116,23 @@
   .dep-item:last-child{border-bottom:none;}
   .dep-name{font-weight:600;font-family:var(--mono);font-size:13px;}
   .dep-meta{font-size:11px;color:var(--muted);margin-top:3px;}
+
+  /* detected-process card */
+  .proc-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:10px;}
+  .proc-card.current{border-color:#3a5a2e;}
+  .proc-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
+  .proc-id{display:flex;align-items:center;gap:10px;}
+  .proc-icon{font-size:16px;}
+  .proc-method{font-weight:700;font-family:var(--mono);font-size:15px;color:var(--accent2);}
+  .proc-badges{display:flex;gap:6px;align-items:center;}
+  .proc-rule{display:grid;grid-template-columns:70px 1fr;gap:8px;align-items:center;padding:4px 0;}
+  .proc-rule .lbl{font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);}
+  .proc-rule code{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:12px;}
+  .proc-rule.curr code{color:var(--accent2);border-color:#2a3a1e;}
+  .proc-rule.base code{color:var(--muted);}
+  .proc-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;}
+  .proc-file{font-size:10px;color:var(--muted);font-family:var(--mono);}
+
   .test-item{display:grid;grid-template-columns:70px 1fr auto;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);align-items:start;}
   .test-item:last-child{border-bottom:none;}
   .test-amount{font-size:24px;font-weight:800;color:var(--accent2);font-family:var(--mono);}
@@ -1308,21 +1325,28 @@ async function loadProcesses() {
       return;
     }
     el.innerHTML = procs.map(p => {
-      const cur = p.isCurrent ? '<span class="badge badge-yellow">current</span>' : '';
-      const base = p.baselineCondition
-        ? `<div class="dep-meta">baseline: <code style="font-size:11px;">${esc(p.baselineCondition)}</code></div>`
-        : '<div class="dep-meta">baseline: (same as current)</div>';
+      const baseRule = p.baselineCondition
+        ? `<div class="proc-rule base"><div class="lbl">baseline</div><code>${esc(p.baselineCondition)}</code></div>`
+        : '';
       return `
-        <div class="dep-item" style="padding:10px 0;">
-          <div style="font-size:18px;">🔧</div>
-          <div style="flex:1;">
-            <div class="dep-name">${esc(p.method)}() &nbsp; <span class="badge badge-blue">field: ${esc(p.field)}</span> ${cur}</div>
-            <div class="dep-meta">current rule: <code style="font-size:11px;">${esc(p.currentCondition)}</code></div>
-            ${base}
-            <div class="dep-meta">${esc(p.file)}</div>
+        <div class="proc-card ${p.isCurrent ? 'current' : ''}">
+          <div class="proc-head">
+            <div class="proc-id">
+              <span class="proc-icon">🔧</span>
+              <span class="proc-method">${esc(p.method)}()</span>
+            </div>
+            <div class="proc-badges">
+              <span class="badge badge-blue">field: ${esc(p.field)}</span>
+              ${p.isCurrent ? '<span class="badge badge-yellow">● current</span>' : ''}
+            </div>
           </div>
-          <button class="btn btn-secondary" style="padding:5px 10px;font-size:11px;"
-            onclick="setPrompt('${esc(p.field)} >= ')">change</button>
+          <div class="proc-rule curr"><div class="lbl">current</div><code>${esc(p.currentCondition)}</code></div>
+          ${baseRule}
+          <div class="proc-foot">
+            <span class="proc-file">${esc(p.file)}</span>
+            <button class="btn btn-secondary" style="padding:5px 12px;font-size:11px;"
+              onclick="setPrompt('${esc(p.field)} >= ')">change</button>
+          </div>
         </div>`;
     }).join('');
   } catch(e) { console.error(e); }

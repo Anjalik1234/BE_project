@@ -4,6 +4,7 @@ import subprocess
 import sys
 import difflib
 import re
+import time
 
 from flask import Flask, render_template, jsonify, request
 
@@ -19,6 +20,7 @@ AFTER_FILE   = (
     / "codepulse" / "demo" / "service" / "PaymentService.java"
 )
 GRAPH_FILE   = PROJECT_DIR / "codepulse-out" / "graph.json"
+HISTORY_FILE = EVIDENCE_DIR / "history.json"
 
 # ── condition regex ──────────────────────────────────────────────────────────
 _COND_RE = re.compile(
@@ -106,6 +108,39 @@ def _recommend_tests(old_op, old_val, new_op, new_val):
             "purpose": purpose,
         })
     return tests
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# Persistent command history
+# ════════════════════════════════════════════════════════════════════════════
+
+def _load_history():
+    if not HISTORY_FILE.exists():
+        return []
+    try:
+        return json.loads(HISTORY_FILE.read_text(encoding="utf-8"))
+    except Exception:
+        return []
+
+
+def _save_history(entries):
+    HISTORY_FILE.write_text(json.dumps(entries, indent=2), encoding="utf-8")
+
+
+def _add_history_entry(entry):
+    entries = _load_history()
+    entries.append(entry)
+    _save_history(entries)
+    return entry
+
+
+def _update_history_entry(entry_id, updates):
+    entries = _load_history()
+    for e in entries:
+        if e.get("id") == entry_id:
+            e.update(updates)
+            break
+    _save_history(entries)
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -478,6 +513,25 @@ def api_prompt_preview():
     # 9. describe what will change in plain language
     description = _describe_intent(intent, cur_op, cur_val, new_op, new_val)
 
+    # 10. save this analysis as a persistent history entry
+    entry_id = f"h_{int(time.time() * 1000)}"
+    entry = {
+        "id":                  entry_id,
+        "timestamp":           time.strftime("%Y-%m-%d %H:%M:%S"),
+        "command":             prompt,
+        "intent":              intent,
+        "description":         description,
+        "currentCondition":    f"order.getAmount() {cur_op} {cur_val:g}" if cur_op else "–",
+        "proposedCondition":   f"order.getAmount() {new_op} {new_val:g}" if new_op else "–",
+        "flippedCount":        sum(1 for r in behavior if r["changed"]),
+        "behaviorPreview":     behavior,
+        "affectedMethods":     affected,
+        "recommendedTests":    tests,
+        "diff":                diff,
+        "status":              "previewed",
+    }
+    _add_history_entry(entry)
+
     return jsonify({
         "intent":         intent,
         "description":    description,
@@ -490,6 +544,7 @@ def api_prompt_preview():
         "behaviorPreview":   behavior,
         "recommendedTests":  tests,
         "flippedCount":  sum(1 for r in behavior if r["changed"]),
+        "historyId":     entry_id,
     })
 
 
@@ -528,6 +583,7 @@ def api_prompt_confirm():
     return the new report.
     """
     proposed_source = (request.json or {}).get("proposedSource", "")
+    history_id      = (request.json or {}).get("historyId")
     if not proposed_source:
         return jsonify({"error": "No proposed source provided."}), 400
 
@@ -554,10 +610,19 @@ def api_prompt_confirm():
     if report:
         report["affectedLines"] = _parse_affected_lines(report.get("dependencyAnalysis", ""))
 
+    success = all(s["success"] for s in step_results)
+
+    # mark the history entry as applied
+    if history_id:
+        _update_history_entry(history_id, {
+            "status": "applied" if success else "failed",
+            "appliedReport": report,
+        })
+
     return jsonify({
         "steps":  step_results,
         "report": report,
-        "success": all(s["success"] for s in step_results),
+        "success": success,
     })
 
 
@@ -575,6 +640,24 @@ def api_prompt_commands():
         {"command": "change operator to <OP>","example": "change operator to <=",   "description": "Alternative operator syntax"},
         {"command": "reset",                  "example": "reset",              "description": "Restore the original baseline file"},
     ])
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# API: command history (persistent)
+# ════════════════════════════════════════════════════════════════════════════
+
+@app.route("/api/history")
+def api_history():
+    """Return every saved command analysis, newest first."""
+    entries = _load_history()
+    entries.reverse()  # newest first
+    return jsonify(entries)
+
+
+@app.route("/api/history/clear", methods=["POST"])
+def api_history_clear():
+    _save_history([])
+    return jsonify({"success": True})
 
 
 if __name__ == "__main__":

@@ -39,5 +39,31 @@
     "Method name is currently configured for this controlled experiment.",
     "Behavioral comparison uses selected sample inputs.",
     "Dependency results do not prove runtime effects."
+  ],
+  "recommendedTests": [
+    {
+      "amount": 0,
+      "expectedBefore": false,
+      "expectedAfter": false,
+      "purpose": "Verify zero-value payments remain rejected"
+    },
+    {
+      "amount": 99,
+      "expectedBefore": true,
+      "expectedAfter": false,
+      "purpose": "Verify an amount below the new threshold is rejected"
+    },
+    {
+      "amount": 100,
+      "expectedBefore": true,
+      "expectedAfter": true,
+      "purpose": "Verify the exact threshold is accepted"
+    },
+    {
+      "amount": 101,
+      "expectedBefore": true,
+      "expectedAfter": true,
+      "purpose": "Verify an amount above the threshold is accepted"
+    }
   ]
 }

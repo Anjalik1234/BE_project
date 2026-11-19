@@ -233,6 +233,9 @@
       <span class="nav-icon">🧬</span> Prompt Lab
       <span class="new-badge">NEW</span>
     </a>
+    <a class="nav-item lab-item" data-section="history" onclick="showSection('history',this)">
+      <span class="nav-icon">📜</span> Command History
+    </a>
     <div class="nav-section">Analysis</div>
     <a class="nav-item active" data-section="overview" onclick="showSection('overview',this)">
       <span class="nav-icon">🏠</span> Overview
@@ -556,6 +559,71 @@
         </div>
       </div>
 
+      <!-- ══════════════════════════════════════════
+           COMMAND HISTORY (persistent)
+      ══════════════════════════════════════════ -->
+      <div class="section" id="section-history">
+        <div class="section-title">Command History</div>
+        <div class="section-sub">Every command run in the Prompt Lab and its full impact analysis, saved automatically.</div>
+        <div class="btn-row" id="history-actions" style="display:none;">
+          <button class="btn btn-secondary" onclick="loadHistory()">↻ Refresh</button>
+          <button class="btn btn-red" onclick="clearHistory()">🗑 Clear All</button>
+        </div>
+        <div id="history-list">
+          <div class="empty"><div class="empty-icon">📜</div>No commands run yet.<br><span style="font-size:12px;">Go to <strong>Prompt Lab</strong> and run a command.</span></div>
+        </div>
+
+        <!-- detail viewer (shown when an entry is opened) -->
+        <div id="history-detail-wrap" style="display:none;margin-top:20px;">
+          <div class="preview-card">
+            <div class="preview-header">
+              <div class="preview-title" id="hd-title">Analysis</div>
+              <div>
+                <span class="badge badge-purple" id="hd-intent">–</span>
+                <span class="badge" id="hd-status">–</span>
+              </div>
+            </div>
+            <div class="preview-desc" id="hd-desc">–</div>
+            <div class="preview-body">
+              <div>
+                <div class="preview-section-title">Payment Condition</div>
+                <div class="cond-compare">
+                  <div>
+                    <div style="font-size:10px;color:var(--muted);margin-bottom:6px;">CURRENT</div>
+                    <div class="cond-box" id="hd-cur-cond">–</div>
+                  </div>
+                  <div class="cond-arrow">→</div>
+                  <div>
+                    <div style="font-size:10px;color:var(--purple);margin-bottom:6px;">PROPOSED</div>
+                    <div class="cond-box proposed" id="hd-new-cond">–</div>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <div class="preview-section-title">Behavior Impact</div>
+                <div class="flip-count" id="hd-flip-count">–</div>
+                <div style="margin-top:12px;">
+                  <table><thead><tr><th>Amount</th><th>Current</th><th>Proposed</th><th>Changed?</th></tr></thead>
+                    <tbody id="hd-behavior-tbody"></tbody></table>
+                </div>
+              </div>
+              <div>
+                <div class="preview-section-title">Affected Methods</div>
+                <div id="hd-affected-list">–</div>
+              </div>
+              <div>
+                <div class="preview-section-title">Code Diff</div>
+                <pre id="hd-diff-pre" style="max-height:220px;overflow-y:auto;"></pre>
+              </div>
+              <div>
+                <div class="preview-section-title">Recommended Tests</div>
+                <div id="hd-tests-list">–</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div><!-- /content -->
   </div><!-- /main -->
 </div><!-- /shell -->
@@ -565,6 +633,7 @@
 let projectInfo = null;
 let report = null;
 let pendingProposedSource = null;  // set during preview, cleared on confirm/cancel
+let pendingHistoryId = null;        // history entry id from preview, sent on confirm
 let commandHistory = [];
 
 /* ══ init ══ */
@@ -577,6 +646,7 @@ window.addEventListener('DOMContentLoaded', () => {
     loadMethod();
     loadBehavior();
     loadFiles();
+    loadHistory();
   });
   buildPipelineUI();
   loadCommandChips();
@@ -584,7 +654,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
 /* ══ nav ══ */
 const sectionTitles = {
-  lab:'Prompt Lab', overview:'Overview', pipeline:'Run Pipeline', diff:'Source Diff',
+  lab:'Prompt Lab', history:'Command History', overview:'Overview', pipeline:'Run Pipeline', diff:'Source Diff',
   method:'Method Detection', impact:'Dependency Impact',
   behavior:'Behavioral Analysis', tests:'Test Recommendations', files:'Java Source Files'
 };
@@ -594,6 +664,7 @@ function showSection(id, el) {
   document.getElementById('section-' + id)?.classList.add('active');
   el?.classList.add('active');
   document.getElementById('topbar-title').textContent = sectionTitles[id] || id;
+  if (id === 'history') loadHistory();   // refresh when opening the page
 }
 
 /* ══ data loaders ══ */
@@ -642,6 +713,7 @@ async function previewCommand() {
   document.getElementById('lab-preview-wrap').style.display = 'none';
   document.getElementById('lab-applied-result').style.display = 'none';
   pendingProposedSource = null;
+  pendingHistoryId = null;
 
   try {
     const r = await fetch('/api/prompt/preview', {
@@ -658,10 +730,12 @@ async function previewCommand() {
     }
 
     pendingProposedSource = data.proposedSource;
+    pendingHistoryId = data.historyId;
     renderPreview(data);
     document.getElementById('lab-preview-wrap').style.display = 'block';
     addHistory(prompt, 'previewed', data.description);
     setLabStatus('Previewing — confirm to apply');
+    loadHistory();   // refresh the saved history list
   } catch(e) {
     showLabError('Request failed: ' + e.message);
   } finally {
@@ -760,7 +834,7 @@ async function confirmChange() {
     const r = await fetch('/api/prompt/confirm', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ proposedSource: pendingProposedSource }),
+      body: JSON.stringify({ proposedSource: pendingProposedSource, historyId: pendingHistoryId }),
     });
     const data = await r.json();
 
@@ -771,6 +845,7 @@ async function confirmChange() {
     // hide preview, show result
     document.getElementById('lab-preview-wrap').style.display = 'none';
     pendingProposedSource = null;
+    pendingHistoryId = null;
 
     const resultEl = document.getElementById('lab-applied-result');
     if (data.success) {
@@ -797,6 +872,7 @@ async function confirmChange() {
     await Promise.all([loadProjectInfo(), loadReport()]);
     renderOverview(); renderImpact(); renderTests();
     loadDiff(); loadMethod(); loadBehavior();
+    loadHistory();   // refresh saved history so the entry shows as applied
 
   } finally {
     btn.disabled = false; spin.style.display = 'none';
@@ -1075,6 +1151,130 @@ function loadFiles() {
                     <td><span class="badge ${col}">${type}</span></td></tr>`;
       }).join('')
     : '<tr><td colspan="2" style="color:var(--muted);">No Java files found.</td></tr>';
+}
+
+/* ══ command history (persistent) ════════════════════════════════════════ */
+let savedHistory = [];
+
+async function loadHistory() {
+  try {
+    savedHistory = await fetch('/api/history').then(r => r.json());
+    renderSavedHistory();
+  } catch(e) { console.error(e); }
+}
+
+function statusBadge(status) {
+  const map = {
+    applied:   'badge-green',
+    previewed: 'badge-blue',
+    cancelled: 'badge-muted',
+    failed:    'badge-red',
+  };
+  return `<span class="badge ${map[status] || 'badge-muted'}">${esc(status || 'previewed')}</span>`;
+}
+
+function renderSavedHistory() {
+  const listEl = document.getElementById('history-list');
+  const actionsEl = document.getElementById('history-actions');
+  if (!savedHistory.length) {
+    actionsEl.style.display = 'none';
+    listEl.innerHTML = '<div class="empty"><div class="empty-icon">📜</div>No commands run yet.<br><span style="font-size:12px;">Go to <strong>Prompt Lab</strong> and run a command.</span></div>';
+    return;
+  }
+  actionsEl.style.display = 'flex';
+  listEl.innerHTML = savedHistory.map(h => {
+    const intentLabels = {
+      set_threshold: 'Set Threshold', set_operator: 'Set Operator',
+      set_condition: 'Set Condition', reset: 'Reset', swap: 'Swap',
+    };
+    const intent = intentLabels[h.intent?.intent] || h.intent?.intent || '–';
+    return `
+      <div class="card" style="margin-bottom:10px;cursor:pointer;" onclick="openHistoryDetail('${esc(h.id)}')">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+          <div>
+            <div style="font-family:var(--mono);font-size:14px;font-weight:600;">${esc(h.command)}</div>
+            <div class="dep-meta" style="margin-top:4px;">
+              <span class="badge badge-purple">${esc(intent)}</span>
+              ${statusBadge(h.status)}
+              &nbsp;·&nbsp; ${esc(h.timestamp || '')}
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div class="dep-meta">${esc(h.currentCondition || '')} → <span style="color:var(--purple);">${esc(h.proposedCondition || '')}</span></div>
+            <div class="dep-meta" style="margin-top:4px;">⚡ ${h.flippedCount || 0} flips · 📍 ${(h.affectedMethods||[]).filter(x=>!x.error).length} affected</div>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function openHistoryDetail(id) {
+  const h = savedHistory.find(x => x.id === id);
+  if (!h) return;
+  const wrap = document.getElementById('history-detail-wrap');
+  wrap.style.display = 'block';
+  wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  const intentLabels = {
+    set_threshold: 'Set Threshold', set_operator: 'Set Operator',
+    set_condition: 'Set Condition', reset: 'Reset', swap: 'Swap',
+  };
+  document.getElementById('hd-title').textContent = h.command;
+  document.getElementById('hd-intent').textContent = intentLabels[h.intent?.intent] || h.intent?.intent || '–';
+  document.getElementById('hd-status').className = 'badge ' + (
+    h.status === 'applied' ? 'badge-green' :
+    h.status === 'failed' ? 'badge-red' :
+    h.status === 'cancelled' ? 'badge-muted' : 'badge-blue');
+  document.getElementById('hd-status').textContent = h.status || 'previewed';
+  document.getElementById('hd-desc').textContent = h.description || '–';
+  document.getElementById('hd-cur-cond').textContent = h.currentCondition || '–';
+  document.getElementById('hd-new-cond').textContent = h.proposedCondition || '–';
+
+  const flips = h.flippedCount || 0;
+  const flipEl = document.getElementById('hd-flip-count');
+  flipEl.className = 'flip-count ' + (flips > 0 ? 'has-flips' : 'no-flips');
+  flipEl.textContent = flips > 0
+    ? `⚡ ${flips} sample amount${flips > 1 ? 's' : ''} changed behaviour`
+    : '✓ No behavior changes in sample amounts';
+
+  document.getElementById('hd-behavior-tbody').innerHTML = (h.behaviorPreview || []).map(row => `
+    <tr class="${row.changed ? 'changed-row' : ''}">
+      <td style="font-family:var(--mono);font-weight:700;">${row.amount}</td>
+      <td class="${row.before ? 'accept':'reject'}">${row.before ? '✓ Accepted':'✗ Rejected'}</td>
+      <td class="${row.after  ? 'accept':'reject'}">${row.after  ? '✓ Accepted':'✗ Rejected'}</td>
+      <td>${row.changed ? '<span class="flip">⚡ Flipped</span>':'<span style="color:var(--muted)">same</span>'}</td>
+    </tr>`).join('');
+
+  const hits = (h.affectedMethods || []).filter(x => !x.error);
+  document.getElementById('hd-affected-list').innerHTML = hits.length
+    ? hits.map(x => `<div class="dep-item"><div>📍</div><div>
+        <div class="dep-name">${esc(x.label)}</div>
+        <div class="dep-meta"><span class="badge badge-blue">${esc(x.relation)}</span> depth ${x.depth} · ${esc(x.file)}${x.location ? ':' + esc(x.location) : ''}</div>
+      </div></div>`).join('')
+    : '<p style="color:var(--muted);font-size:12px;">No affected methods found.</p>';
+
+  document.getElementById('hd-diff-pre').innerHTML = (h.diff || []).map(renderDiffLine).join('\n') || '(no diff)';
+
+  document.getElementById('hd-tests-list').innerHTML = (h.recommendedTests || []).length
+    ? (h.recommendedTests || []).map(t => `
+      <div style="display:flex;align-items:center;gap:14px;padding:10px 0;border-bottom:1px solid var(--border);">
+        <div style="font-size:20px;font-weight:800;color:var(--accent2);font-family:var(--mono);min-width:50px;">${t.amount}</div>
+        <div>
+          <div style="font-size:13px;">${esc(t.purpose)}</div>
+          <div style="margin-top:4px;">
+            <span class="test-exp ${t.expectedBefore ? 'exp-pass':'exp-fail'}">Before: ${t.expectedBefore ? 'Pass':'Fail'}</span>
+            <span class="test-exp ${t.expectedAfter  ? 'exp-pass':'exp-fail'}">After: ${t.expectedAfter  ? 'Pass':'Fail'}</span>
+            ${t.expectedBefore !== t.expectedAfter ? '<span class="badge badge-yellow">⚡ Regression Risk</span>' : ''}
+          </div>
+        </div>
+      </div>`).join('')
+    : '<p style="color:var(--muted);font-size:12px;">No test recommendations.</p>';
+}
+
+async function clearHistory() {
+  await fetch('/api/history/clear', { method: 'POST' });
+  document.getElementById('history-detail-wrap').style.display = 'none';
+  await loadHistory();
 }
 
 /* ══ utils ══ */

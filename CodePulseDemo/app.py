@@ -10,6 +10,17 @@ from flask import Flask, render_template, jsonify, request
 
 app = Flask(__name__)
 
+
+# ── prevent the browser from caching API responses ─────────────────────────
+# Without this, the analysis pages show stale data after a change is applied
+# because the browser reuses the cached JSON from the previous request.
+@app.after_request
+def _no_cache(resp):
+    resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    resp.headers['Pragma'] = 'no-cache'
+    resp.headers['Expires'] = '0'
+    return resp
+
 # ── paths (resolved relative to this file — no machine-specific strings) ────
 PROJECT_DIR  = Path(__file__).parent.resolve()
 EVIDENCE_DIR = PROJECT_DIR / "evidence"

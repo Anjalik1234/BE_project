@@ -1,10 +1,7 @@
 from pathlib import Path
 import json
 
-report_path = (
-    Path(r"F:\PythonProjects\CodePulseDemo")
-    / "evidence" / "impact-report.json"
-)
+report_path = Path(__file__).parent.resolve() / "evidence" / "impact-report.json"
 
 report = json.loads(report_path.read_text(encoding="utf-8"))
 

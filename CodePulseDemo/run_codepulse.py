@@ -2,7 +2,7 @@ from pathlib import Path
 import subprocess
 import sys
 
-project = Path(r"F:\PythonProjects\CodePulseDemo")
+project = Path(__file__).parent.resolve()
 
 steps = [
     ("Detect changed method", "detect_method.py"),

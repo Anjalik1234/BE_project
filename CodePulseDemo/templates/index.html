@@ -1,202 +1,1086 @@
 ﻿<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CodePulse AI | Change Impact Analysis</title>
-    <style>
-        * { box-sizing: border-box; }
-        body {
-            margin: 0;
-            font-family: "Segoe UI", Arial, sans-serif;
-            background: #0b1020;
-            color: #e8edf7;
-        }
-        header {
-            padding: 24px 6%;
-            border-bottom: 1px solid #263047;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .brand { font-size: 23px; font-weight: 700; }
-        .brand span { color: #71a7ff; }
-        .status {
-            color: #80e3b0;
-            background: #143328;
-            padding: 8px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-        }
-        main { max-width: 1150px; margin: 32px auto; padding: 0 20px 40px; }
-        h1 { font-size: 30px; margin-bottom: 8px; }
-        .subtitle { color: #9ca9c3; margin-bottom: 28px; }
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 18px;
-        }
-        .card {
-            background: #131b2e;
-            border: 1px solid #293650;
-            border-radius: 14px;
-            padding: 22px;
-            min-width: 0;
-        }
-        .wide { grid-column: 1 / -1; }
-        h2 { font-size: 17px; margin: 0 0 18px; }
-        .label { color: #9ca9c3; font-size: 12px; margin-bottom: 7px; }
-        .value { overflow-wrap: anywhere; font-size: 15px; }
-        .pill {
-            display: inline-block;
-            background: #283758;
-            color: #a9c9ff;
-            border-radius: 6px;
-            padding: 6px 9px;
-            font-size: 12px;
-        }
-        .conditions {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-        pre {
-            white-space: pre-wrap;
-            overflow-wrap: anywhere;
-            background: #090e19;
-            border: 1px solid #293650;
-            padding: 14px;
-            border-radius: 8px;
-            color: #b8d2ff;
-            font-size: 13px;
-        }
-        .change { color: #ffb4a9; }
-        .success { color: #80e3b0; }
-        .muted { color: #9ca9c3; font-size: 13px; }
-        .item {
-            padding: 13px 0;
-            border-bottom: 1px solid #293650;
-        }
-        .item:last-child { border-bottom: 0; }
-        .item strong { display: block; margin-bottom: 5px; }
-        .test {
-            display: grid;
-            grid-template-columns: 60px 1fr;
-            gap: 12px;
-            padding: 13px 0;
-            border-bottom: 1px solid #293650;
-        }
-        .test:last-child { border-bottom: 0; }
-        .amount { font-size: 18px; font-weight: 700; color: #a9c9ff; }
-        footer { color: #8491aa; font-size: 12px; text-align: center; padding: 20px; }
-        @media (max-width: 700px) {
-            .grid, .conditions { grid-template-columns: 1fr; }
-            .wide { grid-column: auto; }
-            header { padding: 18px 5%; }
-            h1 { font-size: 25px; }
-        }
-    </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CodePulse | Change Impact Analysis</title>
+<style>
+  :root {
+    --bg:       #080d1a;
+    --surface:  #0e1628;
+    --surface2: #131e34;
+    --border:   #1e2e4a;
+    --accent:   #4f8ef7;
+    --accent2:  #7ec8e3;
+    --green:    #4ade80;
+    --red:      #f87171;
+    --yellow:   #fbbf24;
+    --purple:   #c084fc;
+    --muted:    #7a8da8;
+    --text:     #dde6f5;
+    --radius:   12px;
+    --mono:     "JetBrains Mono","Fira Code","Cascadia Code",monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:"Segoe UI",system-ui,sans-serif;font-size:14px;min-height:100vh;}
+
+  /* layout */
+  .shell{display:flex;min-height:100vh;}
+  .sidebar{width:240px;min-width:240px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:24px 0;position:sticky;top:0;height:100vh;overflow-y:auto;}
+  .sidebar-brand{padding:0 20px 24px;border-bottom:1px solid var(--border);margin-bottom:16px;}
+  .sidebar-brand .logo{font-size:20px;font-weight:800;letter-spacing:-.5px;}
+  .sidebar-brand .logo span{color:var(--accent);}
+  .sidebar-brand .tagline{color:var(--muted);font-size:11px;margin-top:2px;}
+  .nav-section{padding:16px 20px 6px;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:1px;}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:10px 20px;cursor:pointer;border-left:3px solid transparent;color:var(--muted);font-size:13px;transition:all .15s;text-decoration:none;}
+  .nav-item:hover,.nav-item.active{color:var(--text);background:var(--surface2);border-left-color:var(--accent);}
+  .nav-item.lab-item:hover,.nav-item.lab-item.active{border-left-color:var(--purple);}
+  .nav-icon{font-size:16px;width:20px;text-align:center;}
+  .new-badge{background:#2d1a4a;color:var(--purple);border-radius:10px;padding:1px 7px;font-size:10px;font-weight:700;margin-left:auto;}
+
+  .main{flex:1;overflow:auto;}
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 32px;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:10;}
+  .topbar-title{font-size:16px;font-weight:600;}
+  .topbar-status{display:flex;align-items:center;gap:8px;}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--muted);}
+  .dot.green{background:var(--green);box-shadow:0 0 6px var(--green);}
+  .dot.yellow{background:var(--yellow);box-shadow:0 0 6px var(--yellow);}
+  .dot.purple{background:var(--purple);box-shadow:0 0 6px var(--purple);}
+  .status-text{font-size:12px;color:var(--muted);}
+
+  .content{padding:28px 32px 48px;max-width:1200px;}
+  .section{display:none;}
+  .section.active{display:block;}
+  .section-title{font-size:20px;font-weight:700;margin-bottom:6px;}
+  .section-sub{color:var(--muted);margin-bottom:24px;font-size:13px;}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+  .span2{grid-column:1/-1;}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;}
+  .card-title{font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;}
+  .card-value{font-size:22px;font-weight:700;}
+  .card-sub{font-size:12px;color:var(--muted);margin-top:4px;}
+
+  /* buttons */
+  .btn{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;border:none;transition:all .15s;}
+  .btn-primary{background:var(--accent);color:#fff;}
+  .btn-primary:hover{background:#3a7be0;}
+  .btn-purple{background:var(--purple);color:#fff;}
+  .btn-purple:hover{background:#a855f7;}
+  .btn-green{background:#166534;color:var(--green);border:1px solid #15803d;}
+  .btn-green:hover{background:#14532d;}
+  .btn-red{background:#2a1414;color:var(--red);border:1px solid #7f1d1d;}
+  .btn-red:hover{background:#3a1a1a;}
+  .btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
+  .btn-secondary:hover{border-color:var(--accent);color:var(--accent);}
+  .btn:disabled{opacity:.45;cursor:not-allowed;}
+  .btn-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:20px;}
+
+  /* badges */
+  .badge{display:inline-block;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:600;}
+  .badge-blue  {background:#12254a;color:var(--accent);}
+  .badge-green {background:#14311f;color:var(--green);}
+  .badge-red   {background:#2a1414;color:var(--red);}
+  .badge-yellow{background:#2a2214;color:var(--yellow);}
+  .badge-purple{background:#2d1a4a;color:var(--purple);}
+  .badge-muted {background:var(--border);color:var(--muted);}
+
+  /* code */
+  pre,code{font-family:var(--mono);font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;overflow-x:auto;white-space:pre-wrap;overflow-wrap:anywhere;color:#b8d2ff;line-height:1.6;}
+  .diff-add{color:var(--green);}
+  .diff-del{color:var(--red);}
+  .diff-meta{color:var(--muted);}
+
+  /* table */
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{text-align:left;color:var(--muted);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;padding:8px 12px;border-bottom:1px solid var(--border);}
+  td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:top;}
+  tr:last-child td{border-bottom:none;}
+  tr:hover td{background:var(--surface2);}
+  .changed-row td{background:#1a1200 !important;}
+  .accept{color:var(--green);font-weight:600;}
+  .reject{color:var(--red);font-weight:600;}
+  .flip{color:var(--yellow);font-size:14px;}
+
+  /* file tabs */
+  .file-tabs{display:flex;gap:2px;border-bottom:1px solid var(--border);}
+  .file-tab{padding:8px 16px;cursor:pointer;font-size:12px;font-family:var(--mono);color:var(--muted);border-bottom:2px solid transparent;border-radius:6px 6px 0 0;transition:all .15s;}
+  .file-tab.active{color:var(--accent);border-bottom-color:var(--accent);background:var(--surface2);}
+  .file-pane{display:none;}
+  .file-pane.active{display:block;}
+
+  /* dep/test items */
+  .dep-item{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);}
+  .dep-item:last-child{border-bottom:none;}
+  .dep-name{font-weight:600;font-family:var(--mono);font-size:13px;}
+  .dep-meta{font-size:11px;color:var(--muted);margin-top:3px;}
+  .test-item{display:grid;grid-template-columns:70px 1fr auto;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);align-items:start;}
+  .test-item:last-child{border-bottom:none;}
+  .test-amount{font-size:24px;font-weight:800;color:var(--accent2);font-family:var(--mono);}
+  .test-exp{font-size:11px;padding:2px 7px;border-radius:4px;margin-right:6px;}
+  .exp-pass{background:#14311f;color:var(--green);}
+  .exp-fail{background:#2a1414;color:var(--red);}
+
+  /* pipeline steps */
+  .pipeline{display:flex;flex-direction:column;gap:10px;}
+  .step{display:flex;align-items:center;gap:14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;transition:border-color .2s;}
+  .step.running{border-color:var(--yellow);}
+  .step.success{border-color:var(--green);}
+  .step.error{border-color:var(--red);}
+  .step-num{width:28px;height:28px;border-radius:50%;background:var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;color:var(--muted);}
+  .step.success .step-num{background:#14311f;color:var(--green);}
+  .step.error .step-num{background:#2a1414;color:var(--red);}
+  .step.running .step-num{background:#2a2214;color:var(--yellow);}
+  .step-info{flex:1;min-width:0;}
+  .step-label{font-weight:600;font-size:14px;}
+  .step-script{font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:2px;}
+  .step-output{font-size:11px;font-family:var(--mono);color:var(--muted);margin-top:6px;white-space:pre-wrap;overflow-wrap:anywhere;max-height:120px;overflow-y:auto;background:var(--bg);border-radius:6px;padding:6px 8px;display:none;}
+  .step.has-output .step-output{display:block;}
+
+  /* spinner */
+  .spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite;}
+  .spinner-purple{border-top-color:var(--purple);}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  /* empty */
+  .empty{text-align:center;padding:60px 20px;color:var(--muted);font-size:14px;}
+  .empty .empty-icon{font-size:42px;margin-bottom:14px;}
+
+  /* ══════════════════════════════════════════════
+     PROMPT LAB specific
+  ══════════════════════════════════════════════ */
+  .lab-container{display:flex;flex-direction:column;gap:20px;}
+
+  /* input area */
+  .lab-input-wrap{background:var(--surface);border:2px solid var(--border);border-radius:14px;padding:20px;transition:border-color .2s;}
+  .lab-input-wrap:focus-within{border-color:var(--purple);}
+  .lab-input-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--purple);margin-bottom:10px;}
+  .lab-input-row{display:flex;gap:10px;align-items:flex-end;}
+  #lab-prompt{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px 14px;font-family:var(--mono);font-size:14px;color:var(--text);outline:none;transition:border-color .2s;}
+  #lab-prompt:focus{border-color:var(--purple);}
+  .lab-hint{font-size:11px;color:var(--muted);margin-top:8px;}
+  .lab-hint code{background:var(--surface2);border:none;padding:1px 5px;border-radius:4px;font-size:11px;}
+
+  /* command chips */
+  .cmd-chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;}
+  .cmd-chip{background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:5px 12px;font-size:12px;font-family:var(--mono);cursor:pointer;transition:all .15s;color:var(--muted);}
+  .cmd-chip:hover{border-color:var(--purple);color:var(--purple);}
+
+  /* preview card */
+  .preview-card{background:var(--surface);border:2px solid var(--purple);border-radius:14px;padding:0;overflow:hidden;}
+  .preview-header{background:#1a0d2e;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);}
+  .preview-title{font-size:15px;font-weight:700;color:var(--purple);}
+  .preview-desc{font-size:13px;color:var(--text);padding:16px 20px;border-bottom:1px solid var(--border);line-height:1.6;}
+  .preview-body{padding:20px;display:flex;flex-direction:column;gap:16px;}
+  .preview-section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:10px;}
+
+  /* conditions comparison */
+  .cond-compare{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;}
+  .cond-box{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-family:var(--mono);font-size:13px;}
+  .cond-box.proposed{border-color:var(--purple);color:var(--purple);}
+  .cond-arrow{color:var(--muted);font-size:18px;text-align:center;}
+
+  /* flip indicator */
+  .flip-count{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;}
+  .flip-count.has-flips{color:var(--yellow);}
+  .flip-count.no-flips{color:var(--green);}
+
+  /* confirm bar */
+  .confirm-bar{background:#1a0d2e;border:1px solid var(--purple);border-radius:10px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+  .confirm-bar-text{font-size:13px;font-weight:600;color:var(--purple);}
+  .confirm-bar-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+  .confirm-actions{display:flex;gap:10px;}
+
+  /* history log */
+  .log-entry{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:12px;}
+  .log-entry:last-child{border-bottom:none;}
+  .log-time{font-size:10px;color:var(--muted);font-family:var(--mono);flex-shrink:0;margin-top:2px;}
+  .log-cmd{font-family:var(--mono);font-size:12px;font-weight:600;}
+  .log-status{font-size:11px;color:var(--muted);margin-top:3px;}
+  .log-entry.applied .log-cmd{color:var(--green);}
+  .log-entry.previewed .log-cmd{color:var(--accent);}
+  .log-entry.cancelled .log-cmd{color:var(--muted);}
+  .log-entry.error-entry .log-cmd{color:var(--red);}
+
+  /* scrollbar */
+  ::-webkit-scrollbar{width:6px;height:6px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+
+  @media(max-width:860px){
+    .sidebar{display:none;}
+    .grid2,.grid3,.cond-compare{grid-template-columns:1fr;}
+    .span2{grid-column:auto;}
+    .cond-arrow{display:none;}
+    .content{padding:20px 16px 40px;}
+    .topbar{padding:14px 16px;}
+  }
+</style>
 </head>
 <body>
-<header>
-    <div class="brand">CodePulse <span>AI</span></div>
-    <div class="status">● Analysis Report</div>
-</header>
+<div class="shell">
 
-<main>
-    <h1>Change Impact Analysis</h1>
-    <p class="subtitle">Understand code changes, dependent components and recommended tests.</p>
-
-    <div class="grid">
-        <section class="card">
-            <h2>Change Overview</h2>
-            <div class="label">Changed file</div>
-            <div class="value">{{ report.file }}</div>
-            <br>
-            <div class="label">Method</div>
-            <div class="value">{{ report.method }}()</div>
-            <br>
-            <div class="label">Change category</div>
-            <span class="pill">{{ report.changeType }}</span>
-        </section>
-
-        <section class="card">
-            <h2>Business Rule Change</h2>
-            <div class="conditions">
-                <div>
-                    <div class="label">Before</div>
-                    <pre>{{ report.oldCondition }}</pre>
-                </div>
-                <div>
-                    <div class="label">After</div>
-                    <pre>{{ report.newCondition }}</pre>
-                </div>
-            </div>
-            <p class="muted">A changed condition can alter application behavior even when dependencies remain unchanged.</p>
-        </section>
-
-        <section class="card wide">
-            <h2>Source Change Evidence</h2>
-            <pre>{% for line in report.diff %}{{ line }}
-{% endfor %}</pre>
-        </section>
-
-        <section class="card">
-            <h2>Potentially Affected Methods</h2>
-            {% for line in affected_lines %}
-                <div class="item">
-                    <strong>{{ line }}</strong>
-                    <span class="muted">Identified by Graphify dependency analysis</span>
-                </div>
-            {% else %}
-                <p class="muted">No affected methods were parsed from the report.</p>
-            {% endfor %}
-        </section>
-
-        <section class="card">
-            <h2>Behavioral Impact</h2>
-            {% for change in report.behaviorChangesForSampleAmounts %}
-                <div class="item">
-                    <strong>Amount: {{ change.amount }}</strong>
-                    <span class="muted">
-                        Before: {{ "Accepted" if change.before else "Rejected" }}
-                        → After: {{ "Accepted" if change.after else "Rejected" }}
-                    </span>
-                </div>
-            {% else %}
-                <p class="success">No changed outcomes among the tested sample amounts.</p>
-            {% endfor %}
-            <p class="muted">These are sample comparisons, not exhaustive runtime verification.</p>
-        </section>
-
-        <section class="card wide">
-            <h2>Recommended Test Cases</h2>
-            {% for test in report.recommendedTests %}
-                <div class="test">
-                    <div class="amount">{{ test.amount }}</div>
-                    <div>
-                        <strong>{{ test.purpose }}</strong>
-                        <div class="muted">
-                            Before: {{ "Pass" if test.expectedBefore else "Fail" }}
-                            · After: {{ "Pass" if test.expectedAfter else "Fail" }}
-                        </div>
-                    </div>
-                </div>
-            {% else %}
-                <p class="muted">No test recommendations available.</p>
-            {% endfor %}
-            <p class="muted">Suggested tests have not necessarily been executed.</p>
-        </section>
-
-        <section class="card wide">
-            <h2>Analysis Limitations</h2>
-            {% for limitation in report.limitations %}
-                <div class="item muted">{{ limitation }}</div>
-            {% endfor %}
-        </section>
+  <!-- ══ SIDEBAR ══ -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="logo">Code<span>Pulse</span></div>
+      <div class="tagline">Change Impact Analysis</div>
     </div>
-</main>
+    <div class="nav-section">Lab</div>
+    <a class="nav-item lab-item" data-section="lab" onclick="showSection('lab',this)">
+      <span class="nav-icon">🧬</span> Prompt Lab
+      <span class="new-badge">NEW</span>
+    </a>
+    <div class="nav-section">Analysis</div>
+    <a class="nav-item active" data-section="overview" onclick="showSection('overview',this)">
+      <span class="nav-icon">🏠</span> Overview
+    </a>
+    <a class="nav-item" data-section="pipeline" onclick="showSection('pipeline',this)">
+      <span class="nav-icon">⚙️</span> Run Pipeline
+    </a>
+    <a class="nav-item" data-section="diff" onclick="showSection('diff',this)">
+      <span class="nav-icon">📄</span> Source Diff
+    </a>
+    <a class="nav-item" data-section="method" onclick="showSection('method',this)">
+      <span class="nav-icon">🔍</span> Method Detection
+    </a>
+    <a class="nav-item" data-section="impact" onclick="showSection('impact',this)">
+      <span class="nav-icon">🌐</span> Dependency Impact
+    </a>
+    <a class="nav-item" data-section="behavior" onclick="showSection('behavior',this)">
+      <span class="nav-icon">📊</span> Behavior Analysis
+    </a>
+    <a class="nav-item" data-section="tests" onclick="showSection('tests',this)">
+      <span class="nav-icon">🧪</span> Test Recommendations
+    </a>
+    <div class="nav-section">Project</div>
+    <a class="nav-item" data-section="files" onclick="showSection('files',this)">
+      <span class="nav-icon">📁</span> Java Source Files
+    </a>
+  </aside>
 
-<footer>CodePulse AI · Prototype · Evidence-backed change impact</footer>
+  <!-- ══ MAIN ══ -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title" id="topbar-title">Overview</div>
+      <div class="topbar-status">
+        <div class="dot" id="status-dot"></div>
+        <span class="status-text" id="status-text">Loading…</span>
+      </div>
+    </div>
+    <div class="content">
+
+      <!-- ══════════════════════════════════════════
+           PROMPT LAB
+      ══════════════════════════════════════════ -->
+      <div class="section" id="section-lab">
+        <div class="section-title">Prompt Lab</div>
+        <div class="section-sub">Type a structured command to preview the impact before applying any change to the codebase.</div>
+
+        <div class="lab-container">
+
+          <!-- input -->
+          <div class="lab-input-wrap">
+            <div class="lab-input-label">⚡ Enter Command</div>
+            <div class="lab-input-row">
+              <input id="lab-prompt" type="text" placeholder="e.g. threshold 500   or   condition >= 250   or   reset"
+                autocomplete="off" spellcheck="false"
+                onkeydown="if(event.key==='Enter') previewCommand()" />
+              <button class="btn btn-purple" onclick="previewCommand()" id="btn-preview">
+                <span>Preview</span>
+                <span class="spinner spinner-purple" id="preview-spin" style="display:none;"></span>
+              </button>
+            </div>
+            <div class="lab-hint">
+              Operators: <code>&gt;=</code> <code>&gt;</code> <code>&lt;=</code> <code>&lt;</code> <code>==</code> <code>!=</code>
+              &nbsp;·&nbsp; Use <code>reset</code> to restore the original file
+            </div>
+            <!-- quick chips -->
+            <div class="cmd-chips" id="cmd-chips"></div>
+          </div>
+
+          <!-- preview (hidden until a command is parsed) -->
+          <div id="lab-preview-wrap" style="display:none;">
+            <div class="preview-card">
+              <div class="preview-header">
+                <div class="preview-title">📋 Change Preview</div>
+                <span class="badge badge-purple" id="preview-intent-badge">–</span>
+              </div>
+              <div class="preview-desc" id="preview-description">–</div>
+              <div class="preview-body">
+
+                <!-- condition change -->
+                <div>
+                  <div class="preview-section-title">Payment Condition</div>
+                  <div class="cond-compare">
+                    <div>
+                      <div style="font-size:10px;color:var(--muted);margin-bottom:6px;">CURRENT</div>
+                      <div class="cond-box" id="prev-cur-cond">–</div>
+                    </div>
+                    <div class="cond-arrow">→</div>
+                    <div>
+                      <div style="font-size:10px;color:var(--purple);margin-bottom:6px;">PROPOSED</div>
+                      <div class="cond-box proposed" id="prev-new-cond">–</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- behavior flips summary -->
+                <div>
+                  <div class="preview-section-title">Behavior Impact</div>
+                  <div class="flip-count" id="prev-flip-count">–</div>
+                  <div style="margin-top:12px;">
+                    <table>
+                      <thead><tr><th>Amount</th><th>Current Result</th><th>Proposed Result</th><th>Changed?</th></tr></thead>
+                      <tbody id="prev-behavior-tbody"></tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <!-- affected methods -->
+                <div>
+                  <div class="preview-section-title">Affected Methods (from CodePulse Graph)</div>
+                  <div id="prev-affected-list">–</div>
+                </div>
+
+                <!-- code diff -->
+                <div>
+                  <div class="preview-section-title">Code Diff</div>
+                  <pre id="prev-diff-pre" style="max-height:220px;overflow-y:auto;"></pre>
+                </div>
+
+                <!-- tests -->
+                <div>
+                  <div class="preview-section-title">Recommended Tests After Change</div>
+                  <div id="prev-tests-list">–</div>
+                </div>
+
+              </div><!-- /preview-body -->
+            </div><!-- /preview-card -->
+
+            <!-- confirm bar -->
+            <div class="confirm-bar" id="confirm-bar">
+              <div>
+                <div class="confirm-bar-text">Apply this change to PaymentService.java?</div>
+                <div class="confirm-bar-sub">The file will be rewritten and the full pipeline will run automatically.</div>
+              </div>
+              <div class="confirm-actions">
+                <button class="btn btn-red" onclick="cancelPreview()">✕ Cancel</button>
+                <button class="btn btn-green" onclick="confirmChange()" id="btn-confirm">
+                  ✓ Confirm &amp; Apply
+                  <span class="spinner" id="confirm-spin" style="display:none;"></span>
+                </button>
+              </div>
+            </div>
+          </div><!-- /preview-wrap -->
+
+          <!-- applied result -->
+          <div id="lab-applied-result" style="display:none;"></div>
+
+          <!-- history -->
+          <div class="card" style="margin-top:4px;">
+            <div class="card-title">Command History</div>
+            <div id="lab-history">
+              <div class="empty" style="padding:30px;"><div class="empty-icon" style="font-size:28px;">📜</div>No commands yet.</div>
+            </div>
+          </div>
+
+        </div>
+      </div><!-- /lab section -->
+
+
+      <!-- ══════════════════════════════════════════
+           OVERVIEW
+      ══════════════════════════════════════════ -->
+      <div class="section active" id="section-overview">
+        <div class="section-title">Change Impact Overview</div>
+        <div class="section-sub">What changed, what it affects, and what to test.</div>
+        <div class="grid3" style="margin-bottom:16px;" id="stat-cards">
+          <div class="card"><div class="card-title">Changed Method</div>
+            <div class="card-value" id="ov-method">–</div>
+            <div class="card-sub" id="ov-change-type">–</div>
+          </div>
+          <div class="card"><div class="card-title">Affected Methods</div>
+            <div class="card-value" id="ov-affected">–</div>
+            <div class="card-sub">in dependency graph</div>
+          </div>
+          <div class="card"><div class="card-title">Behavior Flips</div>
+            <div class="card-value" id="ov-flips">–</div>
+            <div class="card-sub">sample amounts changed result</div>
+          </div>
+        </div>
+        <div class="grid2" id="ov-detail-grid">
+          <div class="card">
+            <div class="card-title">Changed File</div>
+            <code style="display:block;margin-top:4px;" id="ov-file">–</code>
+            <div style="margin-top:16px;">
+              <div class="card-title">Business Rule</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;">
+                <div>
+                  <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Before</div>
+                  <code id="ov-old-cond" style="display:block;padding:8px 10px;font-size:12px;"></code>
+                </div>
+                <div>
+                  <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">After</div>
+                  <code id="ov-new-cond" style="display:block;padding:8px 10px;font-size:12px;border-color:var(--accent);"></code>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Potentially Affected Methods</div>
+            <div id="ov-affected-list"><div class="empty" style="padding:30px;"><div class="empty-icon" style="font-size:28px;">🔍</div>Run the pipeline to see impact.</div></div>
+          </div>
+        </div>
+        <div id="ov-no-report" style="display:none;">
+          <div class="empty"><div class="empty-icon">🚀</div><div>No analysis report found yet.</div>
+            <div style="margin-top:8px;font-size:12px;">Go to <strong>Run Pipeline</strong> to generate one.</div></div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════
+           PIPELINE
+      ══════════════════════════════════════════ -->
+      <div class="section" id="section-pipeline">
+        <div class="section-title">Run Pipeline</div>
+        <div class="section-sub">Execute all 6 analysis steps in sequence, or run them individually.</div>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="btn-run-all" onclick="runPipeline()">
+            ▶ Run Full Pipeline <span class="spinner" id="run-all-spin" style="display:none;"></span>
+          </button>
+          <button class="btn btn-secondary" onclick="showSection('overview', document.querySelector('[data-section=overview]'))">View Report</button>
+        </div>
+        <div class="pipeline" id="pipeline-steps"></div>
+        <div id="pipeline-result" style="margin-top:16px;"></div>
+      </div>
+
+      <!-- ══════════════════════════════════════════
+           SOURCE DIFF
+      ══════════════════════════════════════════ -->
+      <div class="section" id="section-diff">
+        <div class="section-title">Source Diff</div>
+        <div class="section-sub">Unified diff between the before and after versions of the changed Java file.</div>
+        <div class="btn-row"><button class="btn btn-secondary" onclick="loadDiff()">↻ Refresh</button></div>
+        <div class="file-tabs">
+          <div class="file-tab active" onclick="switchDiffTab('diff-view',this)">Unified Diff</div>
+          <div class="file-tab" onclick="switchDiffTab('before-view',this)">Before</div>
+          <div class="file-tab" onclick="switchDiffTab('after-view',this)">After</div>
+        </div>
+        <div class="file-pane active" id="diff-view"><pre id="diff-pre">Loading…</pre></div>
+        <div class="file-pane" id="before-view"><pre id="before-pre">Loading…</pre></div>
+        <div class="file-pane" id="after-view"><pre id="after-pre">Loading…</pre></div>
+      </div>
+
+      <!-- ══════════════════════════════════════════
+           METHOD DETECTION
+      ══════════════════════════════════════════ -->
+      <div class="section" id="section-method">
+        <div class="section-title">Method Detection</div>
+        <div class="section-sub">Shows how CodePulse identifies which Java method contains the change using difflib + regex.</div>
+        <div class="btn-row"><button class="btn btn-secondary" onclick="loadMethod()">↻ Analyze</button></div>
+        <div class="grid2">
+          <div class="card"><div class="card-title">Detected Changed Method</div>
+            <div class="card-value" id="meth-name" style="color:var(--accent2);font-family:var(--mono);">–</div>
+            <div class="card-sub" id="meth-lines">–</div>
+          </div>
+          <div class="card"><div class="card-title">How It Works</div>
+            <ol style="padding-left:18px;line-height:2;font-size:13px;color:var(--muted);">
+              <li>Diff before ↔ after line by line</li>
+              <li>Collect changed line numbers</li>
+              <li>Find all method declarations with regex</li>
+              <li>Pick the method whose declaration is just above the first changed line</li>
+            </ol>
+          </div>
+        </div>
+        <div class="card" style="margin-top:16px;"><div class="card-title">All Detected Methods in File</div>
+          <table id="method-table">
+            <thead><tr><th>Line</th><th>Method Name</th><th>Contains Change?</th></tr></thead>
+            <tbody id="method-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════
+           DEPENDENCY IMPACT
+      ══════════════════════════════════════════ -->
+      <div class="section" id="section-impact">
+        <div class="section-title">Dependency Impact</div>
+        <div class="section-sub">Who calls the changed method, found by walking the CodePulse knowledge graph (reverse BFS, depth 2).</div>
+        <div id="impact-list"><div class="empty"><div class="empty-icon">🌐</div>Run the pipeline first to see dependency data.</div></div>
+        <div class="card" style="margin-top:16px;"><div class="card-title">Raw Graph Analysis Output</div><pre id="dep-raw">–</pre></div>
+      </div>
+
+      <!-- ══════════════════════════════════════════
+           BEHAVIOR
+      ══════════════════════════════════════════ -->
+      <div class="section" id="section-behavior">
+        <div class="section-title">Behavioral Analysis</div>
+        <div class="section-sub">Evaluates the old and new payment conditions against sample amounts to find where behavior changed.</div>
+        <div class="btn-row"><button class="btn btn-secondary" onclick="loadBehavior()">↻ Analyze</button></div>
+        <div class="grid2" style="margin-bottom:16px;">
+          <div class="card"><div class="card-title">Old Condition</div><code id="beh-old" style="display:block;margin-top:4px;"></code></div>
+          <div class="card"><div class="card-title">New Condition</div><code id="beh-new" style="display:block;margin-top:4px;border-color:var(--accent);"></code></div>
+        </div>
+        <div class="card"><div class="card-title">Sample Amount Results</div>
+          <table><thead><tr><th>Amount</th><th>Before</th><th>After</th><th>Changed?</th></tr></thead>
+            <tbody id="beh-tbody"></tbody></table>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════
+           TESTS
+      ══════════════════════════════════════════ -->
+      <div class="section" id="section-tests">
+        <div class="section-title">Test Recommendations</div>
+        <div class="section-sub">Boundary-aware test cases generated from the behavioral analysis.</div>
+        <div id="tests-list"><div class="empty"><div class="empty-icon">🧪</div>Run the pipeline first.</div></div>
+        <div class="card" style="margin-top:20px;"><div class="card-title">Why These Test Values?</div>
+          <p style="color:var(--muted);font-size:13px;line-height:1.7;">
+            CodePulse uses <strong style="color:var(--text)">boundary-value analysis</strong>: test cases are chosen at and around the threshold where behavior changes.
+            For <code style="font-size:11px;">amount &gt;= 100</code>, the interesting values are 0, 99, 100, and 101.
+          </p>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════
+           FILES
+      ══════════════════════════════════════════ -->
+      <div class="section" id="section-files">
+        <div class="section-title">Java Source Files</div>
+        <div class="section-sub">All tracked Java files in the project's source tree.</div>
+        <div class="card">
+          <table><thead><tr><th>File Path</th><th>Type</th></tr></thead>
+            <tbody id="files-tbody"></tbody></table>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /shell -->
+
+<script>
+/* ══ state ══ */
+let projectInfo = null;
+let report = null;
+let pendingProposedSource = null;  // set during preview, cleared on confirm/cancel
+let commandHistory = [];
+
+/* ══ init ══ */
+window.addEventListener('DOMContentLoaded', () => {
+  Promise.all([loadProjectInfo(), loadReport()]).then(() => {
+    renderOverview();
+    renderImpact();
+    renderTests();
+    loadDiff();
+    loadMethod();
+    loadBehavior();
+    loadFiles();
+  });
+  buildPipelineUI();
+  loadCommandChips();
+});
+
+/* ══ nav ══ */
+const sectionTitles = {
+  lab:'Prompt Lab', overview:'Overview', pipeline:'Run Pipeline', diff:'Source Diff',
+  method:'Method Detection', impact:'Dependency Impact',
+  behavior:'Behavioral Analysis', tests:'Test Recommendations', files:'Java Source Files'
+};
+function showSection(id, el) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('section-' + id)?.classList.add('active');
+  el?.classList.add('active');
+  document.getElementById('topbar-title').textContent = sectionTitles[id] || id;
+}
+
+/* ══ data loaders ══ */
+async function loadProjectInfo() {
+  try { projectInfo = await fetch('/api/project-info').then(r => r.json()); }
+  catch(e) { console.error(e); }
+}
+async function loadReport() {
+  try {
+    const r = await fetch('/api/report');
+    report = r.ok ? await r.json() : null;
+    setStatus(!!report);
+  } catch(e) { report = null; setStatus(false); }
+}
+function setStatus(ok) {
+  document.getElementById('status-dot').className = 'dot ' + (ok ? 'green' : 'yellow');
+  document.getElementById('status-text').textContent = ok ? 'Report ready' : 'No report — run pipeline';
+}
+
+/* ══ PROMPT LAB ══════════════════════════════════════════════════════════ */
+
+async function loadCommandChips() {
+  try {
+    const cmds = await fetch('/api/prompt/commands').then(r => r.json());
+    const chips = document.getElementById('cmd-chips');
+    chips.innerHTML = cmds.map(c =>
+      `<div class="cmd-chip" onclick="setPrompt('${c.example}')" title="${c.description}">${esc(c.example)}</div>`
+    ).join('');
+  } catch(e) {}
+}
+
+function setPrompt(text) {
+  document.getElementById('lab-prompt').value = text;
+  document.getElementById('lab-prompt').focus();
+}
+
+async function previewCommand() {
+  const prompt = document.getElementById('lab-prompt').value.trim();
+  if (!prompt) return;
+
+  const btn = document.getElementById('btn-preview');
+  const spin = document.getElementById('preview-spin');
+  btn.disabled = true; spin.style.display = 'inline-block';
+
+  // hide previous results
+  document.getElementById('lab-preview-wrap').style.display = 'none';
+  document.getElementById('lab-applied-result').style.display = 'none';
+  pendingProposedSource = null;
+
+  try {
+    const r = await fetch('/api/prompt/preview', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt }),
+    });
+    const data = await r.json();
+
+    if (!r.ok || data.error) {
+      addHistory(prompt, 'error-entry', data.error || 'Error');
+      showLabError(data.error || 'Unknown error');
+      return;
+    }
+
+    pendingProposedSource = data.proposedSource;
+    renderPreview(data);
+    document.getElementById('lab-preview-wrap').style.display = 'block';
+    addHistory(prompt, 'previewed', data.description);
+    setLabStatus('Previewing — confirm to apply');
+  } catch(e) {
+    showLabError('Request failed: ' + e.message);
+  } finally {
+    btn.disabled = false; spin.style.display = 'none';
+  }
+}
+
+function renderPreview(data) {
+  // intent badge
+  const intentLabels = {
+    set_threshold: 'Set Threshold', set_operator: 'Set Operator',
+    set_condition: 'Set Condition', reset: 'Reset', swap: 'Swap',
+  };
+  document.getElementById('preview-intent-badge').textContent =
+    intentLabels[data.intent?.intent] || data.intent?.intent || '–';
+
+  // description
+  document.getElementById('preview-description').textContent = data.description || '–';
+
+  // conditions
+  document.getElementById('prev-cur-cond').textContent = data.currentCondition || '–';
+  document.getElementById('prev-new-cond').textContent = data.proposedCondition || '–';
+
+  // behavior
+  const flips = data.flippedCount || 0;
+  const flipEl = document.getElementById('prev-flip-count');
+  flipEl.className = 'flip-count ' + (flips > 0 ? 'has-flips' : 'no-flips');
+  flipEl.textContent = flips > 0
+    ? `⚡ ${flips} sample amount${flips > 1 ? 's' : ''} will change behaviour`
+    : '✓ No behavior changes in sample amounts';
+
+  const tbody = document.getElementById('prev-behavior-tbody');
+  tbody.innerHTML = (data.behaviorPreview || []).map(row => `
+    <tr class="${row.changed ? 'changed-row' : ''}">
+      <td style="font-family:var(--mono);font-weight:700;">${row.amount}</td>
+      <td class="${row.before ? 'accept':'reject'}">${row.before ? '✓ Accepted':'✗ Rejected'}</td>
+      <td class="${row.after  ? 'accept':'reject'}">${row.after  ? '✓ Accepted':'✗ Rejected'}</td>
+      <td>${row.changed ? '<span class="flip">⚡ Flipped</span>':'<span style="color:var(--muted)">same</span>'}</td>
+    </tr>
+  `).join('');
+
+  // affected methods
+  const affEl = document.getElementById('prev-affected-list');
+  const hits = (data.affectedMethods || []).filter(h => !h.error);
+  if (!hits.length) {
+    affEl.innerHTML = '<p style="color:var(--muted);font-size:12px;">No affected methods found in graph.</p>';
+  } else {
+    affEl.innerHTML = hits.map(h => `
+      <div class="dep-item">
+        <div>📍</div>
+        <div>
+          <div class="dep-name">${esc(h.label)}</div>
+          <div class="dep-meta">
+            <span class="badge badge-blue">${esc(h.relation)}</span>
+            depth ${h.depth} · ${esc(h.file)}${h.location ? ':' + esc(h.location) : ''}
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // diff
+  const diffLines = (data.diff || []).map(renderDiffLine).join('\n');
+  document.getElementById('prev-diff-pre').innerHTML = diffLines || '(no diff)';
+
+  // tests
+  const testsEl = document.getElementById('prev-tests-list');
+  if (!(data.recommendedTests || []).length) {
+    testsEl.innerHTML = '<p style="color:var(--muted);font-size:12px;">No test recommendations generated.</p>';
+  } else {
+    testsEl.innerHTML = (data.recommendedTests || []).map(t => `
+      <div style="display:flex;align-items:center;gap:14px;padding:10px 0;border-bottom:1px solid var(--border);">
+        <div style="font-size:20px;font-weight:800;color:var(--accent2);font-family:var(--mono);min-width:50px;">${t.amount}</div>
+        <div>
+          <div style="font-size:13px;">${esc(t.purpose)}</div>
+          <div style="margin-top:4px;">
+            <span class="test-exp ${t.expectedBefore ? 'exp-pass':'exp-fail'}">Before: ${t.expectedBefore ? 'Pass':'Fail'}</span>
+            <span class="test-exp ${t.expectedAfter  ? 'exp-pass':'exp-fail'}">After: ${t.expectedAfter  ? 'Pass':'Fail'}</span>
+            ${t.expectedBefore !== t.expectedAfter ? '<span class="badge badge-yellow">⚡ Regression Risk</span>' : ''}
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+}
+
+async function confirmChange() {
+  if (!pendingProposedSource) return;
+
+  const btn = document.getElementById('btn-confirm');
+  const spin = document.getElementById('confirm-spin');
+  btn.disabled = true; spin.style.display = 'inline-block';
+  setLabStatus('Applying change and running pipeline…', 'purple');
+
+  try {
+    const r = await fetch('/api/prompt/confirm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ proposedSource: pendingProposedSource }),
+    });
+    const data = await r.json();
+
+    // mark last history entry as applied
+    if (commandHistory.length) commandHistory[commandHistory.length - 1].status = 'applied';
+    renderHistory();
+
+    // hide preview, show result
+    document.getElementById('lab-preview-wrap').style.display = 'none';
+    pendingProposedSource = null;
+
+    const resultEl = document.getElementById('lab-applied-result');
+    if (data.success) {
+      resultEl.innerHTML = `
+        <div style="background:#14311f;border:1px solid #15803d;border-radius:10px;padding:16px 20px;color:var(--green);font-weight:600;">
+          ✓ Change applied. Pipeline completed successfully.
+          <div style="font-size:12px;color:var(--muted);margin-top:6px;font-weight:400;">
+            All analysis pages have been updated with the new results.
+          </div>
+        </div>`;
+      setLabStatus('Change applied', 'green');
+    } else {
+      const failedStep = data.steps?.find(s => !s.success);
+      resultEl.innerHTML = `
+        <div style="background:#2a1414;border:1px solid #7f1d1d;border-radius:10px;padding:16px 20px;color:var(--red);font-weight:600;">
+          ✗ Pipeline failed at: ${esc(failedStep?.label || '?')}
+          <pre style="margin-top:8px;font-size:11px;color:var(--muted);">${esc(failedStep?.stderr || failedStep?.stdout || '')}</pre>
+        </div>`;
+      setLabStatus('Pipeline failed', 'yellow');
+    }
+    resultEl.style.display = 'block';
+
+    // refresh all other pages with new data
+    await Promise.all([loadProjectInfo(), loadReport()]);
+    renderOverview(); renderImpact(); renderTests();
+    loadDiff(); loadMethod(); loadBehavior();
+
+  } finally {
+    btn.disabled = false; spin.style.display = 'none';
+  }
+}
+
+function cancelPreview() {
+  document.getElementById('lab-preview-wrap').style.display = 'none';
+  document.getElementById('lab-applied-result').style.display = 'none';
+  pendingProposedSource = null;
+  if (commandHistory.length) {
+    const last = commandHistory[commandHistory.length - 1];
+    if (last.cls === 'previewed') { last.cls = 'cancelled'; last.status = 'Cancelled'; }
+  }
+  renderHistory();
+  setLabStatus('Cancelled');
+}
+
+function showLabError(msg) {
+  const el = document.getElementById('lab-applied-result');
+  el.innerHTML = `<div style="background:#2a1414;border:1px solid #7f1d1d;border-radius:10px;padding:14px 18px;color:var(--red);">
+    ✗ ${esc(msg)}</div>`;
+  el.style.display = 'block';
+}
+
+function setLabStatus(msg, color = '') {
+  const dot = document.getElementById('status-dot');
+  const txt = document.getElementById('status-text');
+  dot.className = 'dot ' + (color || 'purple');
+  txt.textContent = msg;
+}
+
+function addHistory(cmd, cls, status) {
+  const now = new Date();
+  const time = now.getHours().toString().padStart(2,'0') + ':' +
+               now.getMinutes().toString().padStart(2,'0') + ':' +
+               now.getSeconds().toString().padStart(2,'0');
+  commandHistory.push({ cmd, cls, status, time });
+  renderHistory();
+}
+
+function renderHistory() {
+  const el = document.getElementById('lab-history');
+  if (!commandHistory.length) {
+    el.innerHTML = '<div class="empty" style="padding:30px;"><div class="empty-icon" style="font-size:28px;">📜</div>No commands yet.</div>';
+    return;
+  }
+  el.innerHTML = [...commandHistory].reverse().map(h => `
+    <div class="log-entry ${h.cls}">
+      <div class="log-time">${esc(h.time)}</div>
+      <div>
+        <div class="log-cmd">${esc(h.cmd)}</div>
+        <div class="log-status">${esc(h.status || '')}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ══ overview ══ */
+function renderOverview() {
+  if (!report) {
+    document.getElementById('ov-no-report').style.display = 'block';
+    document.getElementById('ov-detail-grid').style.display = 'none';
+    document.getElementById('stat-cards').style.display = 'none';
+    return;
+  }
+  document.getElementById('ov-no-report').style.display = 'none';
+  document.getElementById('ov-detail-grid').style.display = 'grid';
+  document.getElementById('stat-cards').style.display = 'grid';
+  document.getElementById('ov-method').textContent = (report.method || '–') + '()';
+  document.getElementById('ov-change-type').textContent = report.changeType || '–';
+  document.getElementById('ov-affected').textContent = (report.affectedLines || []).length;
+  document.getElementById('ov-flips').textContent = (report.behaviorChangesForSampleAmounts || []).length;
+  document.getElementById('ov-file').textContent = report.file || '–';
+  document.getElementById('ov-old-cond').textContent = report.oldCondition || '–';
+  document.getElementById('ov-new-cond').textContent = report.newCondition || '–';
+  const listEl = document.getElementById('ov-affected-list');
+  const lines = report.affectedLines || [];
+  listEl.innerHTML = lines.length ? lines.map(l => {
+    const parts = l.match(/^(.+?)\s+\[(.+?)\]\s+(.+)$/);
+    return parts
+      ? `<div class="dep-item"><div>📍</div><div>
+           <div class="dep-name">${esc(parts[1])}</div>
+           <div class="dep-meta"><span class="badge badge-blue">${esc(parts[2])}</span>  ${esc(parts[3])}</div>
+         </div></div>`
+      : `<div class="dep-item"><div>📍</div><div class="dep-name">${esc(l)}</div></div>`;
+  }).join('') : '<p style="color:var(--muted);font-size:13px;">No affected methods found.</p>';
+}
+
+/* ══ pipeline ══ */
+function buildPipelineUI() {
+  fetch('/api/pipeline/steps').then(r => r.json()).then(steps => {
+    document.getElementById('pipeline-steps').innerHTML = steps.map((s, i) => `
+      <div class="step" id="pstep-${s.id}">
+        <div class="step-num">${i+1}</div>
+        <div class="step-info">
+          <div class="step-label">${esc(s.label)}</div>
+          <div class="step-script">${esc(s.script)}</div>
+          <div class="step-output" id="pout-${s.id}"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
+          <span class="badge badge-muted" id="pbadge-${s.id}">pending</span>
+          <button class="btn btn-secondary" style="padding:5px 10px;font-size:11px;" onclick="runSingleStep('${s.id}')">Run</button>
+        </div>
+      </div>`).join('');
+  });
+}
+
+async function runPipeline() {
+  const btn = document.getElementById('btn-run-all');
+  const spin = document.getElementById('run-all-spin');
+  btn.disabled = true; spin.style.display = 'inline-block';
+  document.querySelectorAll('.step').forEach(el => el.className = 'step');
+  document.querySelectorAll('[id^="pbadge-"]').forEach(el => { el.className='badge badge-muted'; el.textContent='pending'; });
+  document.querySelectorAll('[id^="pout-"]').forEach(el => { el.textContent=''; el.closest('.step').classList.remove('has-output'); });
+
+  const data = await fetch('/api/pipeline/run', { method:'POST' }).then(r => r.json());
+  data.steps.forEach(s => applyStepResult(s));
+  document.querySelectorAll('[id^="pbadge-"]').forEach(el => {
+    if (el.textContent==='pending') { el.textContent='skipped'; }
+  });
+  await loadReport();
+  renderOverview(); renderImpact(); renderTests(); loadBehavior();
+  const allOk = data.steps.every(s => s.success);
+  document.getElementById('pipeline-result').innerHTML = allOk
+    ? `<div style="padding:14px;background:#14311f;border-radius:8px;color:var(--green);font-weight:600;">✓ Pipeline completed. Report generated.</div>`
+    : `<div style="padding:14px;background:#2a1414;border-radius:8px;color:var(--red);font-weight:600;">✗ Failed at: ${data.steps.find(s=>!s.success)?.label}</div>`;
+  btn.disabled = false; spin.style.display = 'none';
+}
+
+async function runSingleStep(stepId) {
+  const stepEl = document.getElementById('pstep-' + stepId);
+  stepEl.className = 'step running';
+  document.getElementById('pbadge-' + stepId).className = 'badge badge-yellow';
+  document.getElementById('pbadge-' + stepId).textContent = 'running…';
+  const s = await fetch('/api/pipeline/run-step', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ stepId }),
+  }).then(r => r.json());
+  applyStepResult(s);
+  await loadReport();
+  renderOverview(); renderImpact(); renderTests();
+}
+
+function applyStepResult(s) {
+  const stepEl  = document.getElementById('pstep-' + s.id);
+  const badgeEl = document.getElementById('pbadge-' + s.id);
+  const outEl   = document.getElementById('pout-' + s.id);
+  if (!stepEl) return;
+  stepEl.classList.remove('running');
+  stepEl.classList.add(s.success ? 'success' : 'error');
+  badgeEl.className = 'badge ' + (s.success ? 'badge-green' : 'badge-red');
+  badgeEl.textContent = s.success ? 'done' : 'failed';
+  const out = (s.stdout + (s.stderr ? '\n[stderr] ' + s.stderr : '')).trim();
+  if (out) { outEl.textContent = out; stepEl.classList.add('has-output'); }
+}
+
+/* ══ diff ══ */
+async function loadDiff() {
+  if (!projectInfo) await loadProjectInfo();
+  try {
+    const d = await fetch('/api/analyze/diff').then(r => r.json());
+    document.getElementById('diff-pre').innerHTML = d.diff
+      ? d.diff.map(renderDiffLine).join('\n')
+      : esc(d.error || 'No diff available.');
+  } catch(e) { document.getElementById('diff-pre').textContent = 'Error.'; }
+  if (projectInfo) {
+    document.getElementById('before-pre').textContent = projectInfo.beforeContent || '(not found)';
+    document.getElementById('after-pre').textContent  = projectInfo.afterContent  || '(not found)';
+  }
+}
+function renderDiffLine(line) {
+  if (line.startsWith('+') && !line.startsWith('+++')) return `<span class="diff-add">${esc(line)}</span>`;
+  if (line.startsWith('-') && !line.startsWith('---')) return `<span class="diff-del">${esc(line)}</span>`;
+  if (/^(@@|---|[+]{3})/.test(line)) return `<span class="diff-meta">${esc(line)}</span>`;
+  return esc(line);
+}
+function switchDiffTab(paneId, el) {
+  document.querySelectorAll('.file-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.file-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(paneId)?.classList.add('active');
+  el.classList.add('active');
+}
+
+/* ══ method detection ══ */
+async function loadMethod() {
+  try {
+    const d = await fetch('/api/analyze/method').then(r => r.json());
+    if (d.error) { document.getElementById('meth-name').textContent = d.error; return; }
+    document.getElementById('meth-name').textContent = d.detectedMethod ? d.detectedMethod + '()' : 'Not detected';
+    document.getElementById('meth-lines').textContent = `Changed lines: ${d.changedLines.length ? d.changedLines.join(', ') : 'none'}`;
+    document.getElementById('method-tbody').innerHTML = (d.methods || []).map(m => `
+      <tr ${m.name === d.detectedMethod ? 'style="background:var(--surface2);"' : ''}>
+        <td style="font-family:var(--mono);">L${m.line}</td>
+        <td style="font-family:var(--mono);color:var(--accent2);">${esc(m.name)}()</td>
+        <td>${m.name === d.detectedMethod
+          ? '<span class="badge badge-yellow">✓ Changed here</span>'
+          : '<span class="badge badge-muted">–</span>'}</td>
+      </tr>`).join('');
+  } catch(e) {}
+}
+
+/* ══ impact ══ */
+function renderImpact() {
+  const listEl = document.getElementById('impact-list');
+  const rawEl  = document.getElementById('dep-raw');
+  if (!report) {
+    listEl.innerHTML = '<div class="empty"><div class="empty-icon">🌐</div>Run the pipeline first.</div>';
+    rawEl.textContent = '–'; return;
+  }
+  rawEl.textContent = report.dependencyAnalysis || '–';
+  const lines = report.affectedLines || [];
+  listEl.innerHTML = lines.length ? lines.map(l => {
+    const parts = l.match(/^(.+?)\s+\[(.+?)\]\s+(.+)$/);
+    return parts
+      ? `<div class="dep-item"><div>📍</div><div>
+           <div class="dep-name">${esc(parts[1])}</div>
+           <div class="dep-meta"><span class="badge badge-blue">${esc(parts[2])}</span> ${esc(parts[3])}</div>
+         </div></div>`
+      : `<div class="dep-item"><div>📍</div><div class="dep-name">${esc(l)}</div></div>`;
+  }).join('') : '<p style="color:var(--muted);font-size:13px;padding:12px 0;">No affected methods.</p>';
+}
+
+/* ══ behavior ══ */
+async function loadBehavior() {
+  try {
+    const d = await fetch('/api/analyze/behavior').then(r => r.json());
+    if (d.error) return;
+    document.getElementById('beh-old').textContent = d.oldCondition;
+    document.getElementById('beh-new').textContent = d.newCondition;
+    document.getElementById('beh-tbody').innerHTML = (d.sampleResults || []).map(row => `
+      <tr class="${row.changed ? 'changed-row' : ''}">
+        <td style="font-family:var(--mono);font-weight:700;">${row.amount}</td>
+        <td class="${row.before ? 'accept':'reject'}">${row.before ? '✓ Accepted':'✗ Rejected'}</td>
+        <td class="${row.after  ? 'accept':'reject'}">${row.after  ? '✓ Accepted':'✗ Rejected'}</td>
+        <td>${row.changed ? '<span class="flip">⚡ Flipped</span>':'<span style="color:var(--muted)">same</span>'}</td>
+      </tr>`).join('');
+  } catch(e) {}
+}
+
+/* ══ tests ══ */
+function renderTests() {
+  const el = document.getElementById('tests-list');
+  if (!report?.recommendedTests?.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">🧪</div>Run the pipeline first.</div>'; return;
+  }
+  el.innerHTML = report.recommendedTests.map(t => `
+    <div class="card" style="margin-bottom:10px;">
+      <div class="test-item">
+        <div class="test-amount">${t.amount}</div>
+        <div>
+          <div style="font-size:13px;font-weight:500;">${esc(t.purpose)}</div>
+          <div style="margin-top:5px;">
+            <span class="test-exp ${t.expectedBefore ? 'exp-pass':'exp-fail'}">Before: ${t.expectedBefore ? 'Pass':'Fail'}</span>
+            <span class="test-exp ${t.expectedAfter  ? 'exp-pass':'exp-fail'}">After: ${t.expectedAfter  ? 'Pass':'Fail'}</span>
+          </div>
+        </div>
+        <div>${t.expectedBefore !== t.expectedAfter
+          ? '<span class="badge badge-yellow">⚡ Regression Risk</span>'
+          : '<span class="badge badge-muted">Stable</span>'}</div>
+      </div>
+    </div>`).join('');
+}
+
+/* ══ files ══ */
+function loadFiles() {
+  if (!projectInfo) return;
+  const files = projectInfo.javaFiles || [];
+  document.getElementById('files-tbody').innerHTML = files.length
+    ? files.map(f => {
+        const type = f.includes('controller') ? 'Controller'
+                   : f.includes('service')    ? 'Service'
+                   : f.includes('model')      ? 'Model' : 'Java';
+        const col  = {Controller:'badge-blue', Service:'badge-green', Model:'badge-muted', Java:'badge-muted'}[type];
+        return `<tr><td style="font-family:var(--mono);font-size:12px;">${esc(f)}</td>
+                    <td><span class="badge ${col}">${type}</span></td></tr>`;
+      }).join('')
+    : '<tr><td colspan="2" style="color:var(--muted);">No Java files found.</td></tr>';
+}
+
+/* ══ utils ══ */
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
 </body>
 </html>

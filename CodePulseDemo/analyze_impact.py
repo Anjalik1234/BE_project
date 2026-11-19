@@ -3,7 +3,7 @@ import difflib
 import re
 import subprocess
 
-project = Path(r"F:\PythonProjects\CodePulseDemo")
+project = Path(__file__).parent.resolve()
 before_file = project / "evidence" / "PaymentService.before.java"
 after_file = (
     project / "src" / "main" / "java" / "com" / "codepulse"
@@ -52,6 +52,7 @@ changed_method = max(candidates, key=lambda item: item[0])[1]
 print("Detected method:", changed_method)
 print("\n=== Dependency Impact ===")
 
+graphify_dir = project.parent / "graphify"
 result = subprocess.run(
     [
         "uv", "run", "graphify", "affected",
@@ -59,7 +60,7 @@ result = subprocess.run(
         "--depth", "2",
         "--graph", str(graph)
     ],
-    cwd=r"F:\PythonProjects\graphify",
+    cwd=str(graphify_dir),
     capture_output=True,
     text=True
 )

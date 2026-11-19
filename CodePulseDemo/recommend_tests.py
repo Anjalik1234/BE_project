@@ -1,7 +1,7 @@
 from pathlib import Path
 import json
 
-project = Path(r"F:\PythonProjects\CodePulseDemo")
+project = Path(__file__).parent.resolve()
 report_file = project / "evidence" / "impact-report.json"
 
 report = json.loads(report_file.read_text(encoding="utf-8"))

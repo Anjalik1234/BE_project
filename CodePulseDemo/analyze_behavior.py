@@ -1,7 +1,7 @@
 from pathlib import Path
 import re
 
-project = Path(r"F:\PythonProjects\CodePulseDemo")
+project = Path(__file__).parent.resolve()
 
 before_file = project / "evidence" / "PaymentService.before.java"
 after_file = (

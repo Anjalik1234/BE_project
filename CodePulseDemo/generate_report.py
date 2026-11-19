@@ -4,7 +4,7 @@ import json
 import re
 import subprocess
 
-project = Path(r"F:\PythonProjects\CodePulseDemo")
+project = Path(__file__).parent.resolve()
 
 before_file = project / "evidence" / "PaymentService.before.java"
 after_file = (
@@ -61,6 +61,7 @@ for amount in sample_amounts:
             "after": new_result
         })
 
+graphify_dir = project.parent / "graphify"
 impact = subprocess.run(
     [
         "uv", "run", "graphify", "affected",
@@ -68,7 +69,7 @@ impact = subprocess.run(
         "--depth", "2",
         "--graph", str(graph)
     ],
-    cwd=r"F:\PythonProjects\graphify",
+    cwd=str(graphify_dir),
     capture_output=True,
     text=True
 )
@@ -88,7 +89,7 @@ report = {
     "limitations": [
         "Method name is currently configured for this controlled experiment.",
         "Behavioral comparison uses selected sample inputs.",
-        "Dependency results come from Graphify and do not prove runtime effects."
+        "Dependency results come from CodePulse graph analysis and do not prove runtime effects."
     ]
 }
 

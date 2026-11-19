@@ -19,9 +19,9 @@ AFTER_FILE   = (
     PROJECT_DIR / "src" / "main" / "java" / "com"
     / "codepulse" / "demo" / "service" / "PaymentService.java"
 )
-GRAPH_FILE   = PROJECT_DIR / "graphify-out" / "graph.json"
-GRAPHIFY_DIR = PROJECT_DIR.parent / "graphify"
-GRAPHIFY_SRC = GRAPHIFY_DIR / "graphify"   # the inner package folder
+GRAPH_FILE        = PROJECT_DIR / "codepulse-out" / "graph.json"
+CODEPULSE_ENG_DIR = PROJECT_DIR.parent / "codepulse-engine"
+CODEPULSE_ENG_SRC = CODEPULSE_ENG_DIR / "graphify"   # inner Python package
 
 # ── condition regex ──────────────────────────────────────────────────────────
 _COND_RE = re.compile(
@@ -116,10 +116,10 @@ def _recommend_tests(old_op, old_val, new_op, new_val):
 # ════════════════════════════════════════════════════════════════════════════
 
 def _load_graph():
-    """Load graph.json into a networkx DiGraph using graphify's own loader."""
+    """Load graph.json into a networkx DiGraph using the CodePulse graph engine."""
     if not GRAPH_FILE.exists():
         return None
-    sys.path.insert(0, str(GRAPHIFY_DIR))
+    sys.path.insert(0, str(CODEPULSE_ENG_DIR))
     try:
         from graphify.paths import load_node_link_graph  # type: ignore
         raw = json.loads(GRAPH_FILE.read_text(encoding="utf-8"))
@@ -130,10 +130,10 @@ def _load_graph():
 
 def _query_affected(method_name: str, depth: int = 2) -> list[dict]:
     """
-    Return affected hits for a method using the graphify Python API.
-    Falls back to an empty list if graphify cannot be imported.
+    Return affected hits for a method using the CodePulse graph engine Python API.
+    Falls back to an empty list if the engine cannot be imported.
     """
-    sys.path.insert(0, str(GRAPHIFY_DIR))
+    sys.path.insert(0, str(CODEPULSE_ENG_DIR))
     try:
         from graphify.affected import affected_nodes, resolve_seed  # type: ignore
         G = _load_graph()

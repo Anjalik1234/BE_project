@@ -22,10 +22,10 @@ env/
 *.log
 
 # Temporary backup of nested Git history
-graphify-git-backup/
+codepulse-engine-git-backup/
 
-# CodePulse: graphify AST cache (large generated files, not source)
-CodePulseDemo/graphify-out/cache/
+# CodePulse: graph engine AST cache (large generated files, not source)
+CodePulseDemo/codepulse-out/cache/
 
 # Kiro IDE artifacts
 .kiro/

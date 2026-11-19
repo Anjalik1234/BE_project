@@ -11,7 +11,7 @@ after_file = (
     project / "src" / "main" / "java" / "com" / "codepulse"
     / "demo" / "service" / "PaymentService.java"
 )
-graph = project / "graphify-out" / "graph.json"
+graph = project / "codepulse-out" / "graph.json"
 
 before = before_file.read_text(encoding="utf-8")
 after = after_file.read_text(encoding="utf-8")
@@ -61,15 +61,15 @@ for amount in sample_amounts:
             "after": new_result
         })
 
-graphify_dir = project.parent / "graphify"
+codepulse_engine_dir = project.parent / "codepulse-engine"
 impact = subprocess.run(
     [
-        "uv", "run", "graphify", "affected",
+        "uv", "run", "graphify", "affected",   # "graphify" = CLI tool name inside codepulse-engine
         ".processPayment()",
         "--depth", "2",
         "--graph", str(graph)
     ],
-    cwd=str(graphify_dir),
+    cwd=str(codepulse_engine_dir),
     capture_output=True,
     text=True
 )

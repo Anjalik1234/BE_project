@@ -1,60 +1,37 @@
+"""
+Compares the baseline condition vs the current condition of the active
+business-rule method across sample inputs, printing where behaviour flips.
+"""
 from pathlib import Path
-import re
+
+from scanner import (
+    detect_current_process, baseline_path, read_condition,
+    condition_string, evaluate, sample_amounts,
+)
 
 project = Path(__file__).parent.resolve()
-
-before_file = project / "evidence" / "PaymentService.before.java"
-after_file = (
-    project / "src" / "main" / "java" / "com" / "codepulse"
-    / "demo" / "service" / "PaymentService.java"
-)
-
-before = before_file.read_text(encoding="utf-8")
-after = after_file.read_text(encoding="utf-8")
-
-pattern = re.compile(
-    r"return\s+order\.getAmount\(\)\s*(>=|>|<=|<|==|!=)\s*(\d+(?:\.\d+)?)\s*;"
-)
-
-old_match = pattern.search(before)
-new_match = pattern.search(after)
-
-if not old_match or not new_match:
-    print("Could not recognize the payment conditions.")
+proc = detect_current_process(project)
+if proc is None:
+    print("No changeable business-rule method found.")
     raise SystemExit(1)
 
-old_operator, old_threshold = old_match.groups()
-new_operator, new_threshold = new_match.groups()
+receiver, getter = proc["receiver"], proc["getter"]
+cur_src = Path(proc["absPath"]).read_text(encoding="utf-8")
+bp      = baseline_path(project, proc["file"])
+base_src = bp.read_text(encoding="utf-8") if bp.exists() else cur_src
 
-old_threshold = float(old_threshold)
-new_threshold = float(new_threshold)
+old_op, old_val = read_condition(base_src, getter)
+new_op, new_val = read_condition(cur_src, getter)
 
-print("Old condition:", old_operator, old_threshold)
-print("New condition:", new_operator, new_threshold)
+if old_op is None or new_op is None:
+    print("Could not recognise the conditions.")
+    raise SystemExit(1)
 
-def evaluate(amount, operator, threshold):
-    if operator == ">":
-        return amount > threshold
-    if operator == ">=":
-        return amount >= threshold
-    if operator == "<":
-        return amount < threshold
-    if operator == "<=":
-        return amount <= threshold
-    if operator == "==":
-        return amount == threshold
-    if operator == "!=":
-        return amount != threshold
-    raise ValueError("Unsupported operator: " + operator)
-
+print("Old condition:", condition_string(receiver, getter, old_op, old_val))
+print("New condition:", condition_string(receiver, getter, new_op, new_val))
 print("\n=== Behavioral Comparison ===")
-for amount in [0, 1, 50, 99, 100, 101, 150]:
-    old_result = evaluate(amount, old_operator, old_threshold)
-    new_result = evaluate(amount, new_operator, new_threshold)
-
+for amount in sample_amounts(old_val, new_val):
+    old_result = evaluate(amount, old_op, old_val)
+    new_result = evaluate(amount, new_op, new_val)
     if old_result != new_result:
-        print(
-            f"Amount {amount}: "
-            f"before={old_result}, after={new_result} "
-            f"<-- behavior changed"
-        )
+        print(f"Value {amount}: before={old_result}, after={new_result} <-- behaviour changed")

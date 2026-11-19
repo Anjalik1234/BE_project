@@ -280,15 +280,21 @@
       ══════════════════════════════════════════ -->
       <div class="section" id="section-lab">
         <div class="section-title">Prompt Lab</div>
-        <div class="section-sub">Type a structured command to preview the impact before applying any change to the codebase.</div>
+        <div class="section-sub">The project's changeable business-rule methods are auto-detected. Type a command naming the field you want to change — e.g. <code>amount &gt;= 500</code> or <code>quantity &gt;= 5</code> — then preview and confirm.</div>
 
         <div class="lab-container">
+
+          <!-- detected processes (auto-scanned from the project) -->
+          <div class="card" style="margin-bottom:0;">
+            <div class="card-title">🔍 Detected Changeable Processes (auto-scanned)</div>
+            <div id="processes-list">Loading…</div>
+          </div>
 
           <!-- input -->
           <div class="lab-input-wrap">
             <div class="lab-input-label">⚡ Enter Command</div>
             <div class="lab-input-row">
-              <input id="lab-prompt" type="text" placeholder="e.g. threshold 500   or   condition >= 250   or   reset"
+              <input id="lab-prompt" type="text" placeholder="e.g. amount >= 500   or   quantity >= 5   or   stock threshold 5"
                 autocomplete="off" spellcheck="false"
                 onkeydown="if(event.key==='Enter') previewCommand()" />
               <button class="btn btn-purple" onclick="previewCommand()" id="btn-preview">
@@ -298,7 +304,8 @@
             </div>
             <div class="lab-hint">
               Operators: <code>&gt;=</code> <code>&gt;</code> <code>&lt;=</code> <code>&lt;</code> <code>==</code> <code>!=</code>
-              &nbsp;·&nbsp; Use <code>reset</code> to restore the original file
+              &nbsp;·&nbsp; Use a field name (<code>amount</code> / <code>quantity</code>) to pick the process
+              &nbsp;·&nbsp; <code>reset</code> restores the baseline
             </div>
             <!-- quick chips -->
             <div class="cmd-chips" id="cmd-chips"></div>
@@ -309,7 +316,10 @@
             <div class="preview-card">
               <div class="preview-header">
                 <div class="preview-title">📋 Change Preview</div>
-                <span class="badge badge-purple" id="preview-intent-badge">–</span>
+                <div style="display:flex;gap:8px;align-items:center;">
+                  <span class="badge badge-blue" id="preview-process-badge">–</span>
+                  <span class="badge badge-purple" id="preview-intent-badge">–</span>
+                </div>
               </div>
               <div class="preview-desc" id="preview-description">–</div>
               <div class="preview-body">
@@ -634,6 +644,7 @@ let projectInfo = null;
 let report = null;
 let pendingProposedSource = null;  // set during preview, cleared on confirm/cancel
 let pendingHistoryId = null;        // history entry id from preview, sent on confirm
+let pendingTargetFile = null;       // which Java file the preview will write on confirm
 let commandHistory = [];
 
 /* ══ init ══ */
@@ -647,6 +658,7 @@ window.addEventListener('DOMContentLoaded', () => {
     loadBehavior();
     loadFiles();
     loadHistory();
+    loadProcesses();
   });
   buildPipelineUI();
   loadCommandChips();
@@ -714,6 +726,7 @@ async function previewCommand() {
   document.getElementById('lab-applied-result').style.display = 'none';
   pendingProposedSource = null;
   pendingHistoryId = null;
+  pendingTargetFile = null;
 
   try {
     const r = await fetch('/api/prompt/preview', {
@@ -731,6 +744,7 @@ async function previewCommand() {
 
     pendingProposedSource = data.proposedSource;
     pendingHistoryId = data.historyId;
+    pendingTargetFile = data.targetFile;
     renderPreview(data);
     document.getElementById('lab-preview-wrap').style.display = 'block';
     addHistory(prompt, 'previewed', data.description);
@@ -751,6 +765,11 @@ function renderPreview(data) {
   };
   document.getElementById('preview-intent-badge').textContent =
     intentLabels[data.intent?.intent] || data.intent?.intent || '–';
+
+  // targeted process badge
+  const proc = data.process || {};
+  document.getElementById('preview-process-badge').textContent =
+    proc.method ? `${proc.method} (${proc.field})` : '–';
 
   // description
   document.getElementById('preview-description').textContent = data.description || '–';
@@ -834,7 +853,7 @@ async function confirmChange() {
     const r = await fetch('/api/prompt/confirm', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ proposedSource: pendingProposedSource, historyId: pendingHistoryId }),
+      body: JSON.stringify({ proposedSource: pendingProposedSource, targetFile: pendingTargetFile, historyId: pendingHistoryId }),
     });
     const data = await r.json();
 
@@ -846,6 +865,7 @@ async function confirmChange() {
     document.getElementById('lab-preview-wrap').style.display = 'none';
     pendingProposedSource = null;
     pendingHistoryId = null;
+    pendingTargetFile = null;
 
     const resultEl = document.getElementById('lab-applied-result');
     if (data.success) {
@@ -873,6 +893,7 @@ async function confirmChange() {
     renderOverview(); renderImpact(); renderTests();
     loadDiff(); loadMethod(); loadBehavior();
     loadHistory();   // refresh saved history so the entry shows as applied
+    loadProcesses(); // re-scan: the changed process becomes the new current target
 
   } finally {
     btn.disabled = false; spin.style.display = 'none';
@@ -1275,6 +1296,36 @@ async function clearHistory() {
   await fetch('/api/history/clear', { method: 'POST' });
   document.getElementById('history-detail-wrap').style.display = 'none';
   await loadHistory();
+}
+
+/* ══ detected processes (auto-scanned) ═══════════════════════════════════ */
+async function loadProcesses() {
+  try {
+    const procs = await fetch('/api/processes').then(r => r.json());
+    const el = document.getElementById('processes-list');
+    if (!Array.isArray(procs) || !procs.length) {
+      el.innerHTML = '<p style="color:var(--muted);font-size:13px;">No changeable business-rule methods found.</p>';
+      return;
+    }
+    el.innerHTML = procs.map(p => {
+      const cur = p.isCurrent ? '<span class="badge badge-yellow">current</span>' : '';
+      const base = p.baselineCondition
+        ? `<div class="dep-meta">baseline: <code style="font-size:11px;">${esc(p.baselineCondition)}</code></div>`
+        : '<div class="dep-meta">baseline: (same as current)</div>';
+      return `
+        <div class="dep-item" style="padding:10px 0;">
+          <div style="font-size:18px;">🔧</div>
+          <div style="flex:1;">
+            <div class="dep-name">${esc(p.method)}() &nbsp; <span class="badge badge-blue">field: ${esc(p.field)}</span> ${cur}</div>
+            <div class="dep-meta">current rule: <code style="font-size:11px;">${esc(p.currentCondition)}</code></div>
+            ${base}
+            <div class="dep-meta">${esc(p.file)}</div>
+          </div>
+          <button class="btn btn-secondary" style="padding:5px 10px;font-size:11px;"
+            onclick="setPrompt('${esc(p.field)} >= ')">change</button>
+        </div>`;
+    }).join('');
+  } catch(e) { console.error(e); }
 }
 
 /* ══ utils ══ */

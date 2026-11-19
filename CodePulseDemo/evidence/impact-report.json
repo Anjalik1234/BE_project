@@ -17,14 +17,13 @@
   ],
   "oldCondition": "order.getAmount() > 0",
   "newCondition": "order.getAmount() >= 100",
+  "oldOperator": ">",
+  "oldValue": 0.0,
+  "newOperator": ">=",
+  "newValue": 100.0,
   "behaviorChangesForSampleAmounts": [
     {
       "amount": 1,
-      "before": true,
-      "after": false
-    },
-    {
-      "amount": 50,
       "before": true,
       "after": false
     },
@@ -36,8 +35,8 @@
   ],
   "dependencyAnalysis": "Affected nodes for .processPayment()\nDepth: 2\n- Order [references] src/main/java/com/codepulse/demo/service/PaymentService.java:L6\n- .getAmount() [calls] src/main/java/com/codepulse/demo/service/PaymentService.java:L7\n- .placeOrder() [calls] src/main/java/com/codepulse/demo/service/OrderService.java:L24\n- OrderController.java [imports] src/main/java/com/codepulse/demo/controller/OrderController.java:L3\n- .createOrder() [references] src/main/java/com/codepulse/demo/controller/OrderController.java:L13\n- .hasStock() [calls] src/main/java/com/codepulse/demo/service/OrderService.java:L20\n- .reduceStock() [calls] src/main/java/com/codepulse/demo/service/OrderService.java:L28\n- .sendConfirmation() [calls] src/main/java/com/codepulse/demo/service/OrderService.java:L29",
   "limitations": [
-    "Method name is currently configured for this controlled experiment.",
-    "Behavioral comparison uses selected sample inputs.",
+    "Method name is auto-detected from the changed source file.",
+    "Behavioral comparison uses sample inputs around the thresholds.",
     "Dependency results do not prove runtime effects."
   ],
   "recommendedTests": [
@@ -45,25 +44,25 @@
       "amount": 0,
       "expectedBefore": false,
       "expectedAfter": false,
-      "purpose": "Verify zero-value payments remain rejected"
+      "purpose": "Verify a zero value"
     },
     {
       "amount": 99,
       "expectedBefore": true,
       "expectedAfter": false,
-      "purpose": "Verify an amount below the new threshold is rejected"
+      "purpose": "Verify value just below threshold (99) is rejected"
     },
     {
       "amount": 100,
       "expectedBefore": true,
       "expectedAfter": true,
-      "purpose": "Verify the exact threshold is accepted"
+      "purpose": "Verify exact threshold (100) is accepted"
     },
     {
       "amount": 101,
       "expectedBefore": true,
       "expectedAfter": true,
-      "purpose": "Verify an amount above the threshold is accepted"
+      "purpose": "Verify value above threshold (101) is accepted"
     }
   ]
 }

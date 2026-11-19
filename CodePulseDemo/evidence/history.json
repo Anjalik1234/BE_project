@@ -1,1 +1,528 @@
-[]
+[
+  {
+    "id": "h_1795101980661",
+    "timestamp": "2026-11-19 20:56:20",
+    "command": "threshold 500",
+    "intent": {
+      "intent": "set_threshold",
+      "value": 500.0
+    },
+    "description": "Change the payment threshold from 100 to 500. The operator stays '>='.",
+    "currentCondition": "order.getAmount() >= 100",
+    "proposedCondition": "order.getAmount() >= 500",
+    "flippedCount": 4,
+    "behaviorPreview": [
+      {
+        "amount": 0,
+        "before": false,
+        "after": false,
+        "changed": false
+      },
+      {
+        "amount": 1,
+        "before": false,
+        "after": false,
+        "changed": false
+      },
+      {
+        "amount": 50,
+        "before": false,
+        "after": false,
+        "changed": false
+      },
+      {
+        "amount": 99,
+        "before": false,
+        "after": false,
+        "changed": false
+      },
+      {
+        "amount": 100,
+        "before": true,
+        "after": false,
+        "changed": true
+      },
+      {
+        "amount": 101,
+        "before": true,
+        "after": false,
+        "changed": true
+      },
+      {
+        "amount": 150,
+        "before": true,
+        "after": false,
+        "changed": true
+      },
+      {
+        "amount": 200,
+        "before": true,
+        "after": false,
+        "changed": true
+      },
+      {
+        "amount": 500,
+        "before": true,
+        "after": true,
+        "changed": false
+      }
+    ],
+    "affectedMethods": [
+      {
+        "nodeId": "src_main_java_com_codepulse_demo_model_order_order",
+        "label": "Order",
+        "depth": 1,
+        "relation": "references",
+        "file": "src/main/java/com/codepulse/demo/service/PaymentService.java",
+        "location": "L6"
+      },
+      {
+        "nodeId": "src_main_java_com_codepulse_demo_model_order_order_getamount",
+        "label": ".getAmount()",
+        "depth": 1,
+        "relation": "calls",
+        "file": "src/main/java/com/codepulse/demo/service/PaymentService.java",
+        "location": "L7"
+      },
+      {
+        "nodeId": "src_main_java_com_codepulse_demo_service_orderservice_orderservice_placeorder",
+        "label": ".placeOrder()",
+        "depth": 1,
+        "relation": "calls",
+        "file": "src/main/java/com/codepulse/demo/service/OrderService.java",
+        "location": "L24"
+      },
+      {
+        "nodeId": "src_main_java_com_codepulse_demo_controller_ordercontroller",
+        "label": "OrderController.java",
+        "depth": 2,
+        "relation": "imports",
+        "file": "src/main/java/com/codepulse/demo/controller/OrderController.java",
+        "location": "L3"
+      },
+      {
+        "nodeId": "src_main_java_com_codepulse_demo_controller_ordercontroller_ordercontroller_createorder",
+        "label": ".createOrder()",
+        "depth": 2,
+        "relation": "references",
+        "file": "src/main/java/com/codepulse/demo/controller/OrderController.java",
+        "location": "L13"
+      },
+      {
+        "nodeId": "src_main_java_com_codepulse_demo_service_inventoryservice_inventoryservice_hasstock",
+        "label": ".hasStock()",
+        "depth": 2,
+        "relation": "calls",
+        "file": "src/main/java/com/codepulse/demo/service/OrderService.java",
+        "location": "L20"
+      },
+      {
+        "nodeId": "src_main_java_com_codepulse_demo_service_inventoryservice_inventoryservice_reducestock",
+        "label": ".reduceStock()",
+        "depth": 2,
+        "relation": "calls",
+        "file": "src/main/java/com/codepulse/demo/service/OrderService.java",
+        "location": "L28"
+      },
+      {
+        "nodeId": "src_main_java_com_codepulse_demo_service_notificationservice_notificationservice_sendconfirmation",
+        "label": ".sendConfirmation()",
+        "depth": 2,
+        "relation": "calls",
+        "file": "src/main/java/com/codepulse/demo/service/OrderService.java",
+        "location": "L29"
+      }
+    ],
+    "recommendedTests": [
+      {
+        "amount": 0,
+        "expectedBefore": false,
+        "expectedAfter": false,
+        "purpose": "Verify zero-value payments"
+      },
+      {
+        "amount": 499,
+        "expectedBefore": true,
+        "expectedAfter": false,
+        "purpose": "Verify amount just below threshold (499) is rejected"
+      },
+      {
+        "amount": 500,
+        "expectedBefore": true,
+        "expectedAfter": true,
+        "purpose": "Verify exact threshold (500) is accepted"
+      },
+      {
+        "amount": 501,
+        "expectedBefore": true,
+        "expectedAfter": true,
+        "purpose": "Verify amount above threshold (501) is accepted"
+      }
+    ],
+    "diff": [
+      "--- current/PaymentService.java",
+      "+++ proposed/PaymentService.java",
+      "@@ -5,7 +5,7 @@",
+      " public class PaymentService {",
+      "     public boolean processPayment(Order order) {",
+      "         System.out.println(\"Processing payment: \" + order.getAmount());",
+      "-        return order.getAmount() >= 100;",
+      "+        return order.getAmount() >= 500;",
+      "     }",
+      " }",
+      " "
+    ],
+    "status": "applied",
+    "appliedReport": {
+      "file": "src\\main\\java\\com\\codepulse\\demo\\service\\PaymentService.java",
+      "method": "processPayment",
+      "changeType": "BUSINESS_RULE_CHANGE",
+      "diff": [
+        "--- before",
+        "+++ after",
+        "@@ -5,6 +5,7 @@",
+        " public class PaymentService {",
+        "     public boolean processPayment(Order order) {",
+        "         System.out.println(\"Processing payment: \" + order.getAmount());",
+        "-        return order.getAmount() > 0;",
+        "+        return order.getAmount() >= 500;",
+        "     }",
+        " }",
+        "+"
+      ],
+      "oldCondition": "order.getAmount() > 0",
+      "newCondition": "order.getAmount() >= 500",
+      "behaviorChangesForSampleAmounts": [
+        {
+          "amount": 1,
+          "before": true,
+          "after": false
+        },
+        {
+          "amount": 50,
+          "before": true,
+          "after": false
+        },
+        {
+          "amount": 99,
+          "before": true,
+          "after": false
+        },
+        {
+          "amount": 100,
+          "before": true,
+          "after": false
+        },
+        {
+          "amount": 101,
+          "before": true,
+          "after": false
+        },
+        {
+          "amount": 150,
+          "before": true,
+          "after": false
+        }
+      ],
+      "dependencyAnalysis": "Affected nodes for .processPayment()\nDepth: 2\n- Order [references] src/main/java/com/codepulse/demo/service/PaymentService.java:L6\n- .getAmount() [calls] src/main/java/com/codepulse/demo/service/PaymentService.java:L7\n- .placeOrder() [calls] src/main/java/com/codepulse/demo/service/OrderService.java:L24\n- OrderController.java [imports] src/main/java/com/codepulse/demo/controller/OrderController.java:L3\n- .createOrder() [references] src/main/java/com/codepulse/demo/controller/OrderController.java:L13\n- .hasStock() [calls] src/main/java/com/codepulse/demo/service/OrderService.java:L20\n- .reduceStock() [calls] src/main/java/com/codepulse/demo/service/OrderService.java:L28\n- .sendConfirmation() [calls] src/main/java/com/codepulse/demo/service/OrderService.java:L29",
+      "limitations": [
+        "Method name is currently configured for this controlled experiment.",
+        "Behavioral comparison uses selected sample inputs.",
+        "Dependency results do not prove runtime effects."
+      ],
+      "recommendedTests": [
+        {
+          "amount": 0,
+          "expectedBefore": false,
+          "expectedAfter": false,
+          "purpose": "Verify zero-value payments remain rejected"
+        },
+        {
+          "amount": 99,
+          "expectedBefore": true,
+          "expectedAfter": false,
+          "purpose": "Verify an amount below the new threshold is rejected"
+        },
+        {
+          "amount": 100,
+          "expectedBefore": true,
+          "expectedAfter": true,
+          "purpose": "Verify the exact threshold is accepted"
+        },
+        {
+          "amount": 101,
+          "expectedBefore": true,
+          "expectedAfter": true,
+          "purpose": "Verify an amount above the threshold is accepted"
+        }
+      ],
+      "affectedLines": [
+        "Order [references] src/main/java/com/codepulse/demo/service/PaymentService.java:L6",
+        ".getAmount() [calls] src/main/java/com/codepulse/demo/service/PaymentService.java:L7",
+        ".placeOrder() [calls] src/main/java/com/codepulse/demo/service/OrderService.java:L24",
+        "OrderController.java [imports] src/main/java/com/codepulse/demo/controller/OrderController.java:L3",
+        ".createOrder() [references] src/main/java/com/codepulse/demo/controller/OrderController.java:L13",
+        ".hasStock() [calls] src/main/java/com/codepulse/demo/service/OrderService.java:L20",
+        ".reduceStock() [calls] src/main/java/com/codepulse/demo/service/OrderService.java:L28",
+        ".sendConfirmation() [calls] src/main/java/com/codepulse/demo/service/OrderService.java:L29"
+      ]
+    }
+  },
+  {
+    "id": "h_1795102215450",
+    "timestamp": "2026-11-19 21:00:15",
+    "command": "threshold 500",
+    "intent": {
+      "intent": "set_threshold",
+      "value": 500.0
+    },
+    "description": "Change the payment threshold from 500 to 500. The operator stays '>='.",
+    "currentCondition": "order.getAmount() >= 500",
+    "proposedCondition": "order.getAmount() >= 500",
+    "flippedCount": 0,
+    "behaviorPreview": [
+      {
+        "amount": 0,
+        "before": false,
+        "after": false,
+        "changed": false
+      },
+      {
+        "amount": 1,
+        "before": false,
+        "after": false,
+        "changed": false
+      },
+      {
+        "amount": 50,
+        "before": false,
+        "after": false,
+        "changed": false
+      },
+      {
+        "amount": 99,
+        "before": false,
+        "after": false,
+        "changed": false
+      },
+      {
+        "amount": 100,
+        "before": false,
+        "after": false,
+        "changed": false
+      },
+      {
+        "amount": 101,
+        "before": false,
+        "after": false,
+        "changed": false
+      },
+      {
+        "amount": 150,
+        "before": false,
+        "after": false,
+        "changed": false
+      },
+      {
+        "amount": 200,
+        "before": false,
+        "after": false,
+        "changed": false
+      },
+      {
+        "amount": 500,
+        "before": true,
+        "after": true,
+        "changed": false
+      }
+    ],
+    "affectedMethods": [
+      {
+        "nodeId": "src_main_java_com_codepulse_demo_model_order_order",
+        "label": "Order",
+        "depth": 1,
+        "relation": "references",
+        "file": "src/main/java/com/codepulse/demo/service/PaymentService.java",
+        "location": "L6"
+      },
+      {
+        "nodeId": "src_main_java_com_codepulse_demo_model_order_order_getamount",
+        "label": ".getAmount()",
+        "depth": 1,
+        "relation": "calls",
+        "file": "src/main/java/com/codepulse/demo/service/PaymentService.java",
+        "location": "L7"
+      },
+      {
+        "nodeId": "src_main_java_com_codepulse_demo_service_orderservice_orderservice_placeorder",
+        "label": ".placeOrder()",
+        "depth": 1,
+        "relation": "calls",
+        "file": "src/main/java/com/codepulse/demo/service/OrderService.java",
+        "location": "L24"
+      },
+      {
+        "nodeId": "src_main_java_com_codepulse_demo_controller_ordercontroller",
+        "label": "OrderController.java",
+        "depth": 2,
+        "relation": "imports",
+        "file": "src/main/java/com/codepulse/demo/controller/OrderController.java",
+        "location": "L3"
+      },
+      {
+        "nodeId": "src_main_java_com_codepulse_demo_controller_ordercontroller_ordercontroller_createorder",
+        "label": ".createOrder()",
+        "depth": 2,
+        "relation": "references",
+        "file": "src/main/java/com/codepulse/demo/controller/OrderController.java",
+        "location": "L13"
+      },
+      {
+        "nodeId": "src_main_java_com_codepulse_demo_service_inventoryservice_inventoryservice_hasstock",
+        "label": ".hasStock()",
+        "depth": 2,
+        "relation": "calls",
+        "file": "src/main/java/com/codepulse/demo/service/OrderService.java",
+        "location": "L20"
+      },
+      {
+        "nodeId": "src_main_java_com_codepulse_demo_service_inventoryservice_inventoryservice_reducestock",
+        "label": ".reduceStock()",
+        "depth": 2,
+        "relation": "calls",
+        "file": "src/main/java/com/codepulse/demo/service/OrderService.java",
+        "location": "L28"
+      },
+      {
+        "nodeId": "src_main_java_com_codepulse_demo_service_notificationservice_notificationservice_sendconfirmation",
+        "label": ".sendConfirmation()",
+        "depth": 2,
+        "relation": "calls",
+        "file": "src/main/java/com/codepulse/demo/service/OrderService.java",
+        "location": "L29"
+      }
+    ],
+    "recommendedTests": [
+      {
+        "amount": 0,
+        "expectedBefore": false,
+        "expectedAfter": false,
+        "purpose": "Verify zero-value payments"
+      },
+      {
+        "amount": 499,
+        "expectedBefore": false,
+        "expectedAfter": false,
+        "purpose": "Verify amount just below threshold (499) is rejected"
+      },
+      {
+        "amount": 500,
+        "expectedBefore": true,
+        "expectedAfter": true,
+        "purpose": "Verify exact threshold (500) is accepted"
+      },
+      {
+        "amount": 501,
+        "expectedBefore": true,
+        "expectedAfter": true,
+        "purpose": "Verify amount above threshold (501) is accepted"
+      }
+    ],
+    "diff": [],
+    "status": "applied",
+    "appliedReport": {
+      "file": "src\\main\\java\\com\\codepulse\\demo\\service\\PaymentService.java",
+      "method": "processPayment",
+      "changeType": "BUSINESS_RULE_CHANGE",
+      "diff": [
+        "--- before",
+        "+++ after",
+        "@@ -5,6 +5,7 @@",
+        " public class PaymentService {",
+        "     public boolean processPayment(Order order) {",
+        "         System.out.println(\"Processing payment: \" + order.getAmount());",
+        "-        return order.getAmount() > 0;",
+        "+        return order.getAmount() >= 500;",
+        "     }",
+        " }",
+        "+"
+      ],
+      "oldCondition": "order.getAmount() > 0",
+      "newCondition": "order.getAmount() >= 500",
+      "behaviorChangesForSampleAmounts": [
+        {
+          "amount": 1,
+          "before": true,
+          "after": false
+        },
+        {
+          "amount": 50,
+          "before": true,
+          "after": false
+        },
+        {
+          "amount": 99,
+          "before": true,
+          "after": false
+        },
+        {
+          "amount": 100,
+          "before": true,
+          "after": false
+        },
+        {
+          "amount": 101,
+          "before": true,
+          "after": false
+        },
+        {
+          "amount": 150,
+          "before": true,
+          "after": false
+        }
+      ],
+      "dependencyAnalysis": "Affected nodes for .processPayment()\nDepth: 2\n- Order [references] src/main/java/com/codepulse/demo/service/PaymentService.java:L6\n- .getAmount() [calls] src/main/java/com/codepulse/demo/service/PaymentService.java:L7\n- .placeOrder() [calls] src/main/java/com/codepulse/demo/service/OrderService.java:L24\n- OrderController.java [imports] src/main/java/com/codepulse/demo/controller/OrderController.java:L3\n- .createOrder() [references] src/main/java/com/codepulse/demo/controller/OrderController.java:L13\n- .hasStock() [calls] src/main/java/com/codepulse/demo/service/OrderService.java:L20\n- .reduceStock() [calls] src/main/java/com/codepulse/demo/service/OrderService.java:L28\n- .sendConfirmation() [calls] src/main/java/com/codepulse/demo/service/OrderService.java:L29",
+      "limitations": [
+        "Method name is currently configured for this controlled experiment.",
+        "Behavioral comparison uses selected sample inputs.",
+        "Dependency results do not prove runtime effects."
+      ],
+      "recommendedTests": [
+        {
+          "amount": 0,
+          "expectedBefore": false,
+          "expectedAfter": false,
+          "purpose": "Verify zero-value payments remain rejected"
+        },
+        {
+          "amount": 99,
+          "expectedBefore": true,
+          "expectedAfter": false,
+          "purpose": "Verify an amount below the new threshold is rejected"
+        },
+        {
+          "amount": 100,
+          "expectedBefore": true,
+          "expectedAfter": true,
+          "purpose": "Verify the exact threshold is accepted"
+        },
+        {
+          "amount": 101,
+          "expectedBefore": true,
+          "expectedAfter": true,
+          "purpose": "Verify an amount above the threshold is accepted"
+        }
+      ],
+      "affectedLines": [
+        "Order [references] src/main/java/com/codepulse/demo/service/PaymentService.java:L6",
+        ".getAmount() [calls] src/main/java/com/codepulse/demo/service/PaymentService.java:L7",
+        ".placeOrder() [calls] src/main/java/com/codepulse/demo/service/OrderService.java:L24",
+        "OrderController.java [imports] src/main/java/com/codepulse/demo/controller/OrderController.java:L3",
+        ".createOrder() [references] src/main/java/com/codepulse/demo/controller/OrderController.java:L13",
+        ".hasStock() [calls] src/main/java/com/codepulse/demo/service/OrderService.java:L20",
+        ".reduceStock() [calls] src/main/java/com/codepulse/demo/service/OrderService.java:L28",
+        ".sendConfirmation() [calls] src/main/java/com/codepulse/demo/service/OrderService.java:L29"
+      ]
+    }
+  }
+]
